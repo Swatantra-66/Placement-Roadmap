@@ -1,36 +1,93 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://github.com/vercel/next.js/tree/canary/packages/create-next-app).
+# 📘 Placement Roadmap Dashboard
 
-## Getting Started
+An interactive **placement preparation tracker** designed for students preparing for campus placements and coding interviews.  
+This roadmap breaks down preparation into **phases** (Foundation, Core DSA, Advanced, and Interview Prep), with progress tracking for each topic (Arrays, Strings, Sorting, etc.).
 
-First, run the development server:
+---
+
+## 🚀 Demo
+
+🔗 [Live Site](https://placement-roadmap-beta.vercel.app/)
+
+---
+
+## ✨ Features
+
+- 📊 **Progress Tracking**: Monitor overall and topic-wise progress.
+- 🗂️ **Phase-wise Roadmap**: Step-by-step structured preparation plan.
+- 🎯 **DSA Focus**: Covers Arrays, Strings, Sorting, Searching, Complexity Analysis, and more.
+- 🖥️ **Interview Phase**: Includes system design, mock interviews, and problem-solving.
+- 🌐 **Deployed on Vercel** for easy access.
+
+---
+
+## 🛠️ Tech Stack
+
+- ⚛️ **React.js** – Frontend framework
+- 🎨 **Tailwind CSS** – UI styling
+- ▲ **Vercel** – Deployment
+
+---
+
+## 📂 Project Structure
+
+```bash
+placement-roadmap/
+│── public/              # Static assets
+│── src/
+│   ├── components/      # Reusable UI components
+│   ├── pages/           # Page-wise views (Foundation, Core, Advanced, etc.)
+│   ├── App.jsx          # Main app file
+│   └── main.jsx         # Entry point
+│── package.json         # Dependencies and scripts
+│── tailwind.config.js   # Tailwind setup
+│── vite.config.js       # Vite setup
+```
+
+---
+
+## ⚡ Getting Started
+
+### 1️⃣ Clone the repository
+
+```bash
+git clone https://github.com/your-username/placement-roadmap.git
+cd placement-roadmap
+```
+
+### 2️⃣ Install dependencies
+
+```bash
+npm install
+```
+
+### 3️⃣ Run the development server
 
 ```bash
 npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+### 4️⃣ Build for production
 
-You can start editing the page by modifying `app/page.js`. The page auto-updates as you edit the file.
+```bash
+npm run build
+```
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+---
 
-## Learn More
+## 📌 Future Improvements
 
-To learn more about Next.js, take a look at the following resources:
+- [ ] Add authentication for saving individual user progress
+- [ ] Add a database to store solved problems
+- [ ] Integrate coding platform links (LeetCode, Codeforces, etc.)
+- [ ] Add calendar/streak tracking
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+---
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+### 🙌 Acknowledgements
 
-## Deploy on Vercel
+#### This project is inspired by the need for a structured placement preparation plan for students in Computer Science and related fields.
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+```
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+```
