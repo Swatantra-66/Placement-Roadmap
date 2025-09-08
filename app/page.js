@@ -57,7 +57,6 @@ export default function PlacementRoadmap() {
     if (completedTasks.size > 0) {
       const today = new Date().toDateString();
       if (lastStudyDate === today) {
-        // Already studied today
       } else if (lastStudyDate === new Date(Date.now() - 86400000).toDateString()) {
         // Studied yesterday, increment streak
         setStudyStreak(prev => prev + 1);
