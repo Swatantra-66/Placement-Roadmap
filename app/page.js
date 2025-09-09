@@ -1,847 +1,536 @@
-"use client";
+'use client'
 
-import React, { useEffect, useMemo, useState, useRef } from "react";
-import {
-  Trophy,
-  Target,
-  Calendar as CalIcon,
-  BookOpen,
-  BarChart3,
-  Building2,
-  FileText,
-  Users,
-  MessageSquare,
-  Download,
-  Bookmark,
-  Play,
-  Clock,
-  Send,
-  CheckCircle2,
-  Circle,
-  Zap,
-} from "lucide-react";
+import React, { useState, useEffect } from 'react';
+import { CheckCircle2, Circle, Calendar, BookOpen, Code, Trophy, Target, Clock, Download, Upload, BarChart3, Brain, Users, Building2, Timer, Star, FileText, TrendingUp } from 'lucide-react';
 
-export default function Page() {
-  // ---------------- Global app state ----------------
-  const [activeTab, setActiveTab] = useState("dashboard"); // sidebar tab
-  const [savedStateLoaded, setSavedStateLoaded] = useState(false);
-
-  // Phase 1 states (roadmap, progress, notes, bookmarks)
+export default function PlacementRoadmap() {
   const [completedTasks, setCompletedTasks] = useState(new Set());
-  const [currentPhaseIndex, setCurrentPhaseIndex] = useState(0);
-  const [problemsSolved, setProblemsSolved] = useState({}); // topicId -> count
-  const [notes, setNotes] = useState({}); // topicId -> note
-  const [bookmarked, setBookmarked] = useState([]); // list of {id, name, company, difficulty, date}
-
-  // streak/time tracking
+  const [currentPhase, setCurrentPhase] = useState(0);
+  const [activeTab, setActiveTab] = useState('roadmap');
   const [studyStreak, setStudyStreak] = useState(0);
   const [lastStudyDate, setLastStudyDate] = useState(null);
+  const [problemsSolved, setProblemsSolved] = useState({});
+  const [studyNotes, setStudyNotes] = useState({});
+  const [bookmarkedProblems, setBookmarkedProblems] = useState([]);
+  const [companyProgress, setCompanyProgress] = useState({});
+  const [timeSpent, setTimeSpent] = useState({});
 
-  // companies progress
-  const [companyProgress, setCompanyProgress] = useState({}); // name -> count
-
-  // Phase 2 states (Aptitude + Resume)
-  const [aptitudeState, setAptitudeState] = useState({
-    category: "quant",
-    qIndex: 0,
-    running: false,
-    timerSecondsLeft: 0,
-    currentQuiz: null,
-    results: {}, // category -> {attempted, correct}
-  });
-
-  // simple sample MCQs (small set demo)
-  const MCQS = {
-    quant: [
-      {
-        id: "q-q-1",
-        q: "If x + 2 = 5, what is x?",
-        options: ["2", "3", "5", "7"],
-        ans: 1,
-      },
-      {
-        id: "q-q-2",
-        q: "Find 12 * 9",
-        options: ["108", "96", "120", "112"],
-        ans: 0,
-      },
-    ],
-    reasoning: [
-      {
-        id: "q-r-1",
-        q: "Which comes next in series: 2, 4, 8, ?",
-        options: ["10", "12", "16", "14"],
-        ans: 2,
-      },
-    ],
-    verbal: [
-      {
-        id: "q-v-1",
-        q: "Choose the antonym of 'abundant'",
-        options: ["scarce", "plentiful", "ample", "bountiful"],
-        ans: 0,
-      },
-    ],
-  };
-
-  // Resume analyzer - user can paste resume text or upload file (placeholder)
-  const [resumeText, setResumeText] = useState("");
-  const resumeKeywords = ["JavaScript", "Python", "React", "SQL", "Node", "AWS", "Docker"];
-
-  // Phase 3 states (Mock Interview + Calendar + Community)
-  const [mock, setMock] = useState({
-    mode: "coding", // coding | hr | behavioral
-    coding: { prompt: sampleCodingPrompt(), answer: "", startedAt: null, duration: 20 * 60 }, // seconds
-    hr: { answers: [] },
-  });
-  const [events, setEvents] = useState([]); // calendar events
-  const [communityPosts, setCommunityPosts] = useState([]);
-
-  // small helpers
-  function sampleCodingPrompt() {
-    return {
-      id: "p1",
-      title: "Two Sum (practice)",
-      description:
-        "Given an array of integers and a target, return indices of two numbers such that they add up to target. (This is practice — don't execute code here.)",
-      suggestedTime: 20 * 60,
-    };
-  }
-
-  // Roadmap data (Phase 1 core content)
-  const phases = useMemo(
-    () => [
-      {
-        title: "Foundation Phase",
-        duration: "3-4 weeks",
-        tasks: [
-          { id: "array-basics", topic: "Arrays", details: "Two pointers, sliding window", targetCount: 40 },
-          { id: "string-basics", topic: "Strings", details: "Pattern matching, palindromes", targetCount: 25 },
-          { id: "sorting", topic: "Sorting & Searching", details: "Binary search, sorts", targetCount: 20 },
-          { id: "time-space", topic: "Time & Space Complexity", details: "Big-O analysis", targetCount: 10 },
-        ],
-      },
-      {
-        title: "Core DSA Phase",
-        duration: "4-5 weeks",
-        tasks: [
-          { id: "linkedlist", topic: "Linked Lists", details: "Reverse, cycles", targetCount: 25 },
-          { id: "stacks-queues", topic: "Stacks & Queues", details: "Monotonic stacks, deque", targetCount: 20 },
-          { id: "trees", topic: "Binary Trees", details: "Traversals, BST", targetCount: 35 },
-          { id: "hashing", topic: "Hashing", details: "Maps, frequency counting", targetCount: 20 },
-        ],
-      },
-      {
-        title: "Advanced Phase",
-        duration: "3-4 weeks",
-        tasks: [
-          { id: "graphs", topic: "Graphs", details: "DFS/BFS, shortest path", targetCount: 25 },
-          { id: "dp", topic: "Dynamic Programming", details: "Knapsack, LIS", targetCount: 30 },
-          { id: "recursion", topic: "Recursion & Backtracking", details: "N-Queens", targetCount: 20 },
-          { id: "greedy", topic: "Greedy", details: "Interval problems", targetCount: 15 },
-        ],
-      },
-      {
-        title: "Interview Prep Phase",
-        duration: "2-3 weeks",
-        tasks: [
-          { id: "mock-coding", topic: "Mock Coding Interviews", details: "Practice with timer", targetCount: 10 },
-          { id: "system-design", topic: "System Design basics", details: "Scalability & APIs", targetCount: 5 },
-          { id: "behavioral", topic: "Behavioral Questions", details: "STAR method", targetCount: 8 },
-          { id: "company-prep", topic: "Company-Specific Prep", details: "Past questions", targetCount: 5 },
-        ],
-      },
-    ],
-    []
-  );
-
-  const companies = useMemo(
-    () => [
-      { name: "Google", difficulty: "Hard", focus: "Algorithms, System Design" },
-      { name: "Microsoft", difficulty: "Medium-Hard", focus: "Problem Solving" },
-      { name: "Amazon", difficulty: "Medium", focus: "Leadership, Scalability" },
-      { name: "Meta", difficulty: "Hard", focus: "Optimization" },
-      { name: "TCS", difficulty: "Easy-Medium", focus: "Aptitude + Coding" },
-    ],
-    []
-  );
-
-  // ---------------- Persistence (localStorage) ----------------
+  // Load data from localStorage on component mount
   useEffect(() => {
-    // load
-    try {
-      const raw = localStorage.getItem("placementRoadmap_v2");
-      if (raw) {
-        const parsed = JSON.parse(raw);
-        setCompletedTasks(new Set(parsed.completedTasks || []));
-        setProblemsSolved(parsed.problemsSolved || {});
-        setNotes(parsed.notes || {});
-        setBookmarked(parsed.bookmarked || []);
-        setCompanyProgress(parsed.companyProgress || {});
-        setStudyStreak(parsed.studyStreak || 0);
-        setLastStudyDate(parsed.lastStudyDate || null);
-        setEvents(parsed.events || []);
-        setCommunityPosts(parsed.communityPosts || []);
-        setSavedStateLoaded(true);
-      } else {
-        setSavedStateLoaded(true);
+    if (typeof window !== 'undefined') {
+      const saved = localStorage.getItem('placementProgress');
+      if (saved) {
+        try {
+          const data = JSON.parse(saved);
+          setCompletedTasks(new Set(data.completedTasks || []));
+          setProblemsSolved(data.problemsSolved || {});
+          setStudyNotes(data.studyNotes || {});
+          setBookmarkedProblems(data.bookmarkedProblems || []);
+          setCompanyProgress(data.companyProgress || {});
+          setStudyStreak(data.studyStreak || 0);
+          setLastStudyDate(data.lastStudyDate);
+        } catch (error) {
+          console.error('Error loading saved progress:', error);
+        }
       }
-    } catch (e) {
-      console.error("load error", e);
-      setSavedStateLoaded(true);
     }
   }, []);
 
+  // Save to localStorage whenever data changes
   useEffect(() => {
-    // save whenever relevant state changes
-    if (!savedStateLoaded) return;
-    const data = {
-      completedTasks: Array.from(completedTasks),
-      problemsSolved,
-      notes,
-      bookmarked,
-      companyProgress,
-      studyStreak,
-      lastStudyDate,
-      events,
-      communityPosts,
-    };
-    localStorage.setItem("placementRoadmap_v2", JSON.stringify(data));
-  }, [
-    savedStateLoaded,
-    completedTasks,
-    problemsSolved,
-    notes,
-    bookmarked,
-    companyProgress,
-    studyStreak,
-    lastStudyDate,
-    events,
-    communityPosts,
-  ]);
-
-  // ---------------- Streak logic ----------------
-  useEffect(() => {
-    // small, robust streak update: if user completes tasks and lastStudyDate is not today -> update.
-    if (completedTasks.size === 0) return;
-    const today = new Date().toDateString();
-    if (lastStudyDate === today) return;
-    if (lastStudyDate === new Date(Date.now() - 86400000).toDateString()) {
-      setStudyStreak((s) => s + 1);
-    } else {
-      setStudyStreak(1);
+    if (typeof window !== 'undefined') {
+      const data = {
+        completedTasks: Array.from(completedTasks),
+        problemsSolved,
+        studyNotes,
+        bookmarkedProblems,
+        companyProgress,
+        studyStreak,
+        lastStudyDate
+      };
+      localStorage.setItem('placementProgress', JSON.stringify(data));
     }
-    setLastStudyDate(today);
-  }, [completedTasks]);
+  }, [completedTasks, problemsSolved, studyNotes, bookmarkedProblems, companyProgress, studyStreak, lastStudyDate]);
 
-  // ---------------- Roadmap actions ----------------
+  // Update streak logic
+  useEffect(() => {
+    if (completedTasks.size > 0) {
+      const today = new Date().toDateString();
+      if (lastStudyDate === today) {
+        // Already studied today
+      } else if (lastStudyDate === new Date(Date.now() - 86400000).toDateString()) {
+        // Studied yesterday, increment streak
+        setStudyStreak(prev => prev + 1);
+        setLastStudyDate(today);
+      } else if (lastStudyDate !== null && lastStudyDate !== today) {
+        // Broke streak or first time
+        setStudyStreak(1);
+        setLastStudyDate(today);
+      } else if (lastStudyDate === null) {
+        // First time
+        setStudyStreak(1);
+        setLastStudyDate(today);
+      }
+    }
+  }, [completedTasks, lastStudyDate]);
+
   const toggleTask = (taskId) => {
-    const next = new Set(completedTasks);
-    if (next.has(taskId)) next.delete(taskId);
-    else next.add(taskId);
-    setCompletedTasks(next);
+    const newCompleted = new Set(completedTasks);
+    const today = new Date().toDateString();
+
+    if (newCompleted.has(taskId)) {
+      newCompleted.delete(taskId);
+    } else {
+      newCompleted.add(taskId);
+      // Update streak on first completion of the day
+      if (lastStudyDate !== today) {
+        setLastStudyDate(today);
+        setStudyStreak(prev => prev + 1);
+      }
+    }
+    setCompletedTasks(newCompleted);
   };
 
-  const setProblemCount = (taskId, count) => {
-    setProblemsSolved((p) => ({ ...p, [taskId]: Math.max(0, Math.floor(count || 0)) }));
+  const updateProblemCount = (topicId, count) => {
+    setProblemsSolved(prev => ({ ...prev, [topicId]: count }));
   };
 
-  const setNote = (taskId, text) => {
-    setNotes((n) => ({ ...n, [taskId]: text }));
+  const addStudyNote = (topicId, note) => {
+    setStudyNotes(prev => ({ ...prev, [topicId]: note }));
   };
 
-  const addBookmark = ({ name, difficulty, company }) => {
-    const item = {
+  const addBookmark = (problem, difficulty, company) => {
+    const newBookmark = {
       id: Date.now(),
-      name,
+      problem,
       difficulty,
       company,
-      date: new Date().toLocaleDateString(),
+      dateAdded: new Date().toLocaleDateString()
     };
-    setBookmarked((b) => [item, ...b]);
+    setBookmarkedProblems(prev => [...prev, newBookmark]);
   };
 
-  const removeBookmark = (id) => setBookmarked((b) => b.filter((x) => x.id !== id));
-
-  const exportProgressJSON = () => {
+  const exportProgress = () => {
     const data = {
       completedTasks: Array.from(completedTasks),
       problemsSolved,
-      notes,
-      bookmarked,
-      companyProgress,
+      studyNotes,
+      bookmarkedProblems,
       studyStreak,
-      lastStudyDate,
-      events,
-      communityPosts,
-      exportedAt: new Date().toISOString(),
+      companyProgress,
+      timeSpent,
+      exportDate: new Date().toISOString()
     };
-    const blob = new Blob([JSON.stringify(data, null, 2)], { type: "application/json" });
+    const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
     const url = URL.createObjectURL(blob);
-    const a = document.createElement("a");
+    const a = document.createElement('a');
     a.href = url;
-    a.download = "placement-roadmap-export.json";
+    a.download = 'placement-progress.json';
     a.click();
     URL.revokeObjectURL(url);
   };
 
-  // ---------------- Aptitude Quiz Engine (Phase 2) ----------------
-  const startQuiz = (category = "quant", timeSeconds = 120) => {
-    setAptitudeState((s) => ({
-      ...s,
-      category,
-      qIndex: 0,
-      running: true,
-      timerSecondsLeft: timeSeconds,
-      currentQuiz: MCQS[category] ? MCQS[category][0] : null,
-    }));
+  const phases = [
+    {
+      title: "Foundation Phase",
+      duration: "3-4 weeks",
+      description: "Build strong fundamentals",
+      color: "bg-blue-500",
+      tasks: [
+        { id: 'array-basics', topic: 'Arrays', target: '40+ problems', details: 'Two pointers, sliding window, prefix sum', targetCount: 40 },
+        { id: 'string-basics', topic: 'Strings', target: '25+ problems', details: 'Pattern matching, manipulation, palindromes', targetCount: 25 },
+        { id: 'sorting', topic: 'Sorting & Searching', target: '20+ problems', details: 'Binary search variants, sorting algorithms', targetCount: 20 },
+        { id: 'time-space', topic: 'Time & Space Complexity', target: 'Master Big O', details: 'Analyze and optimize solutions', targetCount: 10 }
+      ]
+    },
+    {
+      title: "Core DSA Phase",
+      duration: "4-5 weeks",
+      description: "Master essential data structures",
+      color: "bg-green-500",
+      tasks: [
+        { id: 'linkedlist', topic: 'Linked Lists', target: '25+ problems', details: 'Reversal, cycle detection, merging', targetCount: 25 },
+        { id: 'stacks-queues', topic: 'Stacks & Queues', target: '20+ problems', details: 'Monotonic stack, deque, priority queue', targetCount: 20 },
+        { id: 'trees', topic: 'Binary Trees', target: '35+ problems', details: 'Traversals, BST, tree construction', targetCount: 35 },
+        { id: 'hashing', topic: 'Hashing', target: '20+ problems', details: 'HashMap, frequency counting, two sum variants', targetCount: 20 }
+      ]
+    },
+    {
+      title: "Advanced Phase",
+      duration: "3-4 weeks",
+      description: "Tackle complex algorithms",
+      color: "bg-purple-500",
+      tasks: [
+        { id: 'graphs', topic: 'Graphs', target: '25+ problems', details: 'DFS, BFS, shortest path, topological sort', targetCount: 25 },
+        { id: 'dp', topic: 'Dynamic Programming', target: '30+ problems', details: '1D/2D DP, knapsack, LCS, LIS', targetCount: 30 },
+        { id: 'recursion', topic: 'Recursion & Backtracking', target: '20+ problems', details: 'N-Queens, subsets, permutations', targetCount: 20 },
+        { id: 'greedy', topic: 'Greedy Algorithms', target: '15+ problems', details: 'Activity selection, interval problems', targetCount: 15 }
+      ]
+    },
+    {
+      title: "Interview Prep Phase",
+      duration: "2-3 weeks",
+      description: "Mock interviews & system design",
+      color: "bg-red-500",
+      tasks: [
+        { id: 'mock-coding', topic: 'Mock Coding Interviews', target: '10+ sessions', details: 'Practice with timer, explain approach', targetCount: 10 },
+        { id: 'system-design', topic: 'Basic System Design', target: '5+ concepts', details: 'Scalability, databases, APIs', targetCount: 5 },
+        { id: 'behavioral', topic: 'Behavioral Questions', target: 'STAR method', details: 'Leadership, teamwork, challenges', targetCount: 8 },
+        { id: 'company-prep', topic: 'Company-Specific Prep', target: '5+ companies', details: 'Past questions, company culture', targetCount: 5 }
+      ]
+    }
+  ];
+
+  const companies = [
+    { name: 'Google', difficulty: 'Hard', focus: 'Algorithms, System Design' },
+    { name: 'Microsoft', difficulty: 'Medium-Hard', focus: 'Problem Solving, Coding' },
+    { name: 'Amazon', difficulty: 'Medium', focus: 'Leadership, Scalability' },
+    { name: 'Meta', difficulty: 'Hard', focus: 'Data Structures, Optimization' },
+    { name: 'Apple', difficulty: 'Medium-Hard', focus: 'Innovation, Technical Depth' },
+    { name: 'Netflix', difficulty: 'Hard', focus: 'Culture Fit, Technical Excellence' }
+  ];
+
+  const calculateProgress = () => {
+    const totalTasks = phases.reduce((sum, phase) => sum + phase.tasks.length, 0);
+    const completed = completedTasks.size;
+    return Math.round((completed / totalTasks) * 100);
   };
 
-  // timer for aptitude
-  useEffect(() => {
-    if (!aptitudeState.running) return;
-    const id = setInterval(() => {
-      setAptitudeState((s) => {
-        if (s.timerSecondsLeft <= 1) {
-          // stop
-          return { ...s, running: false, timerSecondsLeft: 0 };
-        }
-        return { ...s, timerSecondsLeft: s.timerSecondsLeft - 1 };
-      });
-    }, 1000);
-    return () => clearInterval(id);
-  }, [aptitudeState.running]);
-
-  const submitMCQAnswer = (category, qId, selectedIndex) => {
-    const qSet = MCQS[category] || [];
-    const q = qSet.find((x) => x.id === qId);
-    const correct = q && q.ans === selectedIndex;
-    setAptitudeState((s) => {
-      const prev = s.results[category] || { attempted: 0, correct: 0 };
-      return { ...s, results: { ...s.results, [category]: { attempted: prev.attempted + 1, correct: prev.correct + (correct ? 1 : 0) } } };
-    });
-    // advance index
-    setAptitudeState((s) => {
-      const nextIndex = (s.qIndex || 0) + 1;
-      const nextQuiz = MCQS[category] && MCQS[category][nextIndex] ? MCQS[category][nextIndex] : null;
-      if (!nextQuiz) {
-        return { ...s, running: false, currentQuiz: null, qIndex: nextIndex };
-      }
-      return { ...s, qIndex: nextIndex, currentQuiz: nextQuiz };
-    });
+  const calculateTotalProblems = () => {
+    return Object.values(problemsSolved).reduce((sum, count) => sum + (count || 0), 0);
   };
 
-  // ---------------- Resume Analyzer (Phase 2) ----------------
-  const analyzeResumeText = (text) => {
-    const lower = text.toLowerCase();
-    const found = resumeKeywords.filter((k) => lower.includes(k.toLowerCase()));
-    // quick format checks
-    const checks = [];
-    if (text.split("\n").some((l) => l.trim().startsWith("-") || l.trim().startsWith("*"))) checks.push("Bulleted sections found");
-    if (text.includes("@") && text.includes(".com")) checks.push("Contains an email");
-    if (found.length === 0) checks.push("No top keywords found — consider adding skills");
-    return { found, checks, score: Math.min(100, 40 + found.length * 12) };
+  const getWeakAreas = () => {
+    const allTasks = phases.flatMap(phase => phase.tasks);
+    return allTasks
+      .filter(task => !completedTasks.has(task.id) && (problemsSolved[task.id] || 0) < task.targetCount * 0.5)
+      .slice(0, 3);
   };
 
-  // ---------------- Mock Interview (Phase 3) ----------------
-  const startMockCoding = (seconds) => {
-    setMock((m) => ({ ...m, mode: "coding", coding: { ...m.coding, startedAt: Date.now(), duration: seconds, answer: "" } }));
-    setActiveTab("mock");
-  };
-
-  const stopMockCoding = () => {
-    // store attempt
-    const attempt = {
-      id: Date.now(),
-      prompt: mock.coding.prompt || sampleCodingPrompt(),
-      answer: mock.coding.answer,
-      startedAt: mock.coding.startedAt,
-      duration: mock.coding.duration,
-      submittedAt: Date.now(),
-    };
-    // store as community post for review (local)
-    setCommunityPosts((c) => [{ type: "mockAttempt", ...attempt }, ...c]);
-    // reset
-    setMock((m) => ({ ...m, coding: { ...m.coding, startedAt: null } }));
-  };
-
-  // ---------------- Calendar (Phase 3) ----------------
-  const addEvent = (title, dateStr, note) => {
-    const ev = { id: Date.now(), title, date: dateStr, note };
-    setEvents((e) => [ev, ...e]);
-  };
-
-  const exportICS = () => {
-    // generate a minimal ICS with all events (UTC naive)
-    let ics = "BEGIN:VCALENDAR\nVERSION:2.0\nPRODID:-//PlacementRoadmap//EN\n";
-    events.forEach((ev) => {
-      const dt = new Date(ev.date);
-      const dtStr = dt.toISOString().replace(/[-:]/g, "").split(".")[0] + "Z";
-      ics += "BEGIN:VEVENT\n";
-      ics += `UID:${ev.id}\n`;
-      ics += `DTSTAMP:${dtStr}\n`;
-      ics += `DTSTART:${dtStr}\n`;
-      ics += `SUMMARY:${ev.title}\n`;
-      if (ev.note) ics += `DESCRIPTION:${ev.note}\n`;
-      ics += "END:VEVENT\n";
-    });
-    ics += "END:VCALENDAR";
-    const blob = new Blob([ics], { type: "text/calendar" });
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement("a");
-    a.href = url;
-    a.download = "placement-events.ics";
-    a.click();
-    URL.revokeObjectURL(url);
-  };
-
-  // ---------------- Utilities / small derived values ----------------
-  const totalTasksCount = phases.reduce((s, p) => s + p.tasks.length, 0);
-  const completedCount = completedTasks.size;
-  const overallProgressPercent = Math.round((completedCount / Math.max(1, totalTasksCount)) * 100);
-  const totalProblemsSolved = Object.values(problemsSolved).reduce((s, v) => s + (v || 0), 0);
-
-  // ---------------- Render helpers for sections ----------------
-
-  const RenderHeaderCards = () => (
-    <div className="bg-gradient-to-r from-blue-600 to-purple-600 text-white rounded-lg p-6 mb-6">
-      <div className="grid grid-cols-1 md:grid-cols-4 gap-4 text-center">
-        <div>
-          <Trophy className="mx-auto" />
-          <div className="text-2xl font-bold">{overallProgressPercent}%</div>
-          <div className="text-sm opacity-90">Overall Progress</div>
-        </div>
-        <div>
-          <Target className="mx-auto" />
-          <div className="text-2xl font-bold">{totalProblemsSolved}</div>
-          <div className="text-sm opacity-90">Problems Solved</div>
-        </div>
-        <div>
-          <CalIcon className="mx-auto" />
-          <div className="text-2xl font-bold">{studyStreak}</div>
-          <div className="text-sm opacity-90">Day Streak</div>
-        </div>
-        <div>
-          <Clock className="mx-auto" />
-          <div className="text-2xl font-bold">{Object.keys(notes).length}</div>
-          <div className="text-sm opacity-90">Notes</div>
+  const renderRoadmap = () => (
+    <div>
+      <div className="bg-gradient-to-r from-blue-500 to-purple-600 rounded-lg p-4 text-white mb-6">
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-4 text-center">
+          <div>
+            <Trophy className="w-8 h-8 mx-auto mb-2" />
+            <div className="text-2xl font-bold">{calculateProgress()}%</div>
+            <div className="text-sm opacity-90">Overall Progress</div>
+          </div>
+          <div>
+            <Target className="w-8 h-8 mx-auto mb-2" />
+            <div className="text-2xl font-bold">{calculateTotalProblems()}</div>
+            <div className="text-sm opacity-90">Problems Solved</div>
+          </div>
+          <div>
+            <Calendar className="w-8 h-8 mx-auto mb-2" />
+            <div className="text-2xl font-bold">{studyStreak}</div>
+            <div className="text-sm opacity-90">Day Streak</div>
+          </div>
         </div>
       </div>
-    </div>
-  );
 
-  // ---------------- Main UI ----------------
-  return (
-    <div className="min-h-screen bg-gray-50 p-6">
-      <div className="max-w-7xl mx-auto grid grid-cols-1 lg:grid-cols-6 gap-6">
-        {/* Sidebar */}
-        <aside className="col-span-1 bg-white p-4 rounded-lg shadow">
-          <h2 className="text-xl font-bold mb-4">Placement Roadmap</h2>
-
-          <nav className="space-y-2">
-            <NavButton id="dashboard" label="Dashboard" icon={BarChart3} active={activeTab === "dashboard"} onClick={() => setActiveTab("dashboard")} />
-            <NavButton id="roadmap" label="Roadmap" icon={BookOpen} active={activeTab === "roadmap"} onClick={() => setActiveTab("roadmap")} />
-            <NavButton id="aptitude" label="Aptitude" icon={Target} active={activeTab === "aptitude"} onClick={() => setActiveTab("aptitude")} />
-            <NavButton id="companies" label="Companies" icon={Building2} active={activeTab === "companies"} onClick={() => setActiveTab("companies")} />
-            <NavButton id="resume" label="Resume Analyzer" icon={FileText} active={activeTab === "resume"} onClick={() => setActiveTab("resume")} />
-            <NavButton id="analytics" label="Analytics" icon={BarChart3} active={activeTab === "analytics"} onClick={() => setActiveTab("analytics")} />
-            <NavButton id="mock" label="Mock Interview" icon={Users} active={activeTab === "mock"} onClick={() => setActiveTab("mock")} />
-            <NavButton id="calendar" label="Calendar" icon={CalIcon} active={activeTab === "calendar"} onClick={() => setActiveTab("calendar")} />
-            <NavButton id="community" label="Community" icon={MessageSquare} active={activeTab === "community"} onClick={() => setActiveTab("community")} />
-          </nav>
-
-          <div className="mt-6 border-t pt-4">
-            <button onClick={exportProgressJSON} className="w-full flex items-center justify-center gap-2 bg-green-600 text-white px-3 py-2 rounded">
-              <Download className="w-4 h-4" /> Export progress
-            </button>
-            <p className="text-xs mt-2 text-gray-600">Your data is saved locally in the browser (localStorage).</p>
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
+        {phases.map((phase, index) => (
+          <div
+            key={index}
+            className={`p-4 rounded-lg cursor-pointer transition-all ${currentPhase === index ? 'ring-2 ring-blue-400' : ''
+              } ${phase.color} text-white`}
+            onClick={() => setCurrentPhase(index)}
+          >
+            <h3 className="font-bold text-lg mb-1">{phase.title}</h3>
+            <p className="text-sm opacity-90 mb-2">{phase.duration}</p>
+            <p className="text-xs">{phase.description}</p>
+            <div className="mt-2 text-xs">
+              {phase.tasks.filter(task => completedTasks.has(task.id)).length}/{phase.tasks.length} completed
+            </div>
           </div>
-        </aside>
+        ))}
+      </div>
 
-        {/* Main */}
-        <main className="col-span-1 lg:col-span-5">
-          {/* Dashboard */}
-          {activeTab === "dashboard" && (
-            <>
-              <RenderHeaderCards />
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                <div className="bg-white p-4 rounded shadow">
-                  <h3 className="font-semibold mb-2">Quick Actions</h3>
-                  <div className="flex flex-col gap-2">
-                    <button onClick={() => setActiveTab("roadmap")} className="px-3 py-2 bg-blue-600 text-white rounded">Start Roadmap</button>
-                    <button onClick={() => setActiveTab("aptitude")} className="px-3 py-2 bg-indigo-600 text-white rounded">Take Aptitude Test</button>
-                    <button onClick={() => setActiveTab("resume")} className="px-3 py-2 bg-gray-800 text-white rounded">Update Resume</button>
-                  </div>
-                </div>
+      <div className="bg-gray-50 rounded-lg p-6">
+        <div className="flex items-center justify-between mb-4">
+          <div className="flex items-center">
+            <Target className="w-6 h-6 mr-2 text-blue-600" />
+            <h2 className="text-2xl font-bold text-gray-800">{phases[currentPhase].title}</h2>
+          </div>
+          <span className="bg-blue-100 text-blue-800 px-3 py-1 rounded-full text-sm">
+            {phases[currentPhase].duration}
+          </span>
+        </div>
 
-                <div className="bg-white p-4 rounded shadow">
-                  <h3 className="font-semibold mb-2">Today's Focus</h3>
-                  <p className="text-sm">Complete 5 array problems, revise DP notes</p>
-                  <div className="mt-3">
-                    <button onClick={() => {
-                      // simple simulation: mark one array problem solved
-                      setProblemCount("array-basics", (problemsSolved["array-basics"] || 0) + 1);
-                      setActiveTab("roadmap");
-                    }} className="px-3 py-2 bg-green-600 text-white rounded flex items-center gap-2">
-                      <Zap /> Mark small win
-                    </button>
-                  </div>
-                </div>
-
-                <div className="bg-white p-4 rounded shadow">
-                  <h3 className="font-semibold mb-2">Bookmarks</h3>
-                  {bookmarked.length === 0 ? <p className="text-sm text-gray-500">No bookmarks yet</p> : (
-                    <ul className="space-y-2 text-sm">
-                      {bookmarked.slice(0, 5).map(b => <li key={b.id}>{b.name} <span className="text-gray-400">({b.company})</span></li>)}
-                    </ul>
+        <div className="grid gap-4">
+          {phases[currentPhase].tasks.map((task) => (
+            <div key={task.id} className="bg-white rounded-lg p-4 shadow-sm border">
+              <div className="flex items-start">
+                <button
+                  onClick={() => toggleTask(task.id)}
+                  className="mr-3 mt-1 flex-shrink-0"
+                >
+                  {completedTasks.has(task.id) ? (
+                    <CheckCircle2 className="w-6 h-6 text-green-500" />
+                  ) : (
+                    <Circle className="w-6 h-6 text-gray-400" />
                   )}
-                </div>
-              </div>
-            </>
-          )}
-
-          {/* Roadmap */}
-          {activeTab === "roadmap" && (
-            <div>
-              <div className="flex items-center justify-between mb-4">
-                <h2 className="text-2xl font-bold">Roadmap</h2>
-                <div className="text-sm text-gray-600">Progress: {overallProgressPercent}% • Tasks completed: {completedCount}/{totalTasksCount}</div>
-              </div>
-
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                {phases.map((ph, idx) => (
-                  <div key={ph.title} className="bg-white p-4 rounded shadow">
-                    <div className="flex items-start justify-between">
-                      <div>
-                        <h3 className="font-semibold">{ph.title}</h3>
-                        <div className="text-sm text-gray-500">{ph.duration}</div>
-                      </div>
-                      <div>
-                        <div className="text-xs text-gray-600">{ph.tasks.filter(t => completedTasks.has(t.id)).length}/{ph.tasks.length} done</div>
-                      </div>
-                    </div>
-
-                    <div className="mt-3 space-y-3">
-                      {ph.tasks.map(t => (
-                        <div key={t.id} className="p-3 border rounded flex items-start gap-3">
-                          <button onClick={() => toggleTask(t.id)} className="mt-1">
-                            {completedTasks.has(t.id) ? <CheckCircle2 className="text-green-500" /> : <Circle className="text-gray-300" />}
-                          </button>
-                          <div className="flex-1">
-                            <div className="flex items-center justify-between">
-                              <div>
-                                <div className={`${completedTasks.has(t.id) ? "line-through text-gray-500" : "text-gray-800"} font-semibold`}>{t.topic}</div>
-                                <div className="text-xs text-gray-500">{t.details}</div>
-                              </div>
-                              <div className="text-xs">
-                                <div className="bg-blue-100 text-blue-800 px-2 py-1 rounded text-xs">{(problemsSolved[t.id] || 0)}/{t.targetCount}</div>
-                              </div>
-                            </div>
-
-                            <div className="mt-2 flex items-center gap-2">
-                              <input type="number" min="0" max={t.targetCount} value={problemsSolved[t.id] || 0} onChange={(e) => setProblemCount(t.id, parseInt(e.target.value || 0))} className="w-20 p-1 border rounded text-xs" />
-                              <textarea placeholder="Add notes..." value={notes[t.id] || ""} onChange={(e) => setNote(t.id, e.target.value)} className="flex-1 p-2 border rounded text-xs" rows="2" />
-                              <button onClick={() => addBookmark({ name: t.topic, difficulty: "Topic", company: "General" })} className="p-2 bg-yellow-400 rounded"><Bookmark /></button>
-                            </div>
-                          </div>
-                        </div>
-                      ))}
+                </button>
+                <div className="flex-grow">
+                  <div className="flex items-center justify-between mb-2">
+                    <h3 className={`text-lg font-semibold ${completedTasks.has(task.id) ? 'text-green-600 line-through' : 'text-gray-800'
+                      }`}>
+                      {task.topic}
+                    </h3>
+                    <div className="flex items-center gap-2">
+                      <span className="bg-blue-100 text-blue-800 px-2 py-1 rounded-full text-xs">
+                        {problemsSolved[task.id] || 0}/{task.targetCount}
+                      </span>
+                      <input
+                        type="number"
+                        min="0"
+                        max={task.targetCount}
+                        value={problemsSolved[task.id] || 0}
+                        onChange={(e) => updateProblemCount(task.id, parseInt(e.target.value) || 0)}
+                        className="w-16 px-2 py-1 text-xs border rounded"
+                        placeholder="0"
+                      />
                     </div>
                   </div>
-                ))}
-              </div>
-            </div>
-          )}
-
-          {/* Aptitude (Phase 2) */}
-          {activeTab === "aptitude" && (
-            <div className="space-y-4">
-              <h2 className="text-2xl font-bold">Aptitude Practice</h2>
-
-              <div className="flex gap-2">
-                {["quant", "reasoning", "verbal"].map(cat => (
-                  <button key={cat} onClick={() => setAptitudeState(s => ({ ...s, category: cat, qIndex: 0, currentQuiz: MCQS[cat] && MCQS[cat][0] || null }))} className={`px-3 py-2 rounded ${aptitudeState.category === cat ? 'bg-blue-600 text-white' : 'bg-white'}`}>{cat.toUpperCase()}</button>
-                ))}
-                <div className="ml-auto flex items-center gap-2">
-                  <button onClick={() => startQuiz(aptitudeState.category, 120)} className="px-3 py-2 bg-green-600 text-white rounded">Start 2m Quiz</button>
-                  <div className="text-sm text-gray-600">Timer: {aptitudeState.timerSecondsLeft}s</div>
-                </div>
-              </div>
-
-              <div className="bg-white p-4 rounded shadow">
-                {aptitudeState.running && aptitudeState.currentQuiz ? (
-                  <div>
-                    <div className="font-semibold">{aptitudeState.currentQuiz.q}</div>
-                    <div className="mt-3 grid grid-cols-1 md:grid-cols-2 gap-2">
-                      {aptitudeState.currentQuiz.options.map((opt, i) => (
-                        <button key={i} onClick={() => submitMCQAnswer(aptitudeState.category, aptitudeState.currentQuiz.id, i)} className="p-2 border rounded text-left">{String.fromCharCode(65 + i)}. {opt}</button>
-                      ))}
-                    </div>
+                  <p className="text-sm text-gray-600 mb-2">{task.details}</p>
+                  <div className="w-full bg-gray-200 rounded-full h-2">
+                    <div
+                      className="bg-blue-500 rounded-full h-2 transition-all duration-300"
+                      style={{ width: `${Math.min(((problemsSolved[task.id] || 0) / task.targetCount) * 100, 100)}%` }}
+                    ></div>
                   </div>
-                ) : (
-                  <div>
-                    <div className="text-sm text-gray-600">No active quiz. Press Start to begin timed practice. Results per category:</div>
-                    <div className="mt-3 grid grid-cols-1 md:grid-cols-3 gap-3">
-                      {Object.keys(MCQS).map(cat => {
-                        const res = aptitudeState.results[cat] || { attempted: 0, correct: 0 };
-                        const acc = res.attempted ? Math.round((res.correct / res.attempted) * 100) : 0;
-                        return (
-                          <div key={cat} className="p-3 border rounded">
-                            <div className="font-semibold">{cat.toUpperCase()}</div>
-                            <div className="text-sm text-gray-600">Attempted: {res.attempted} • Correct: {res.correct} • Acc: {acc}%</div>
-                          </div>
-                        );
-                      })}
-                    </div>
-                  </div>
-                )}
-              </div>
-            </div>
-          )}
-
-          {/* Companies */}
-          {activeTab === "companies" && (
-            <div>
-              <h2 className="text-2xl font-bold mb-3">Company Preparation</h2>
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                {companies.map(c => (
-                  <div key={c.name} className="bg-white p-4 rounded shadow">
-                    <div className="flex items-center justify-between">
-                      <div>
-                        <h3 className="font-semibold">{c.name}</h3>
-                        <div className="text-sm text-gray-500">{c.focus}</div>
-                      </div>
-                      <div className="text-sm">
-                        <input type="number" min="0" value={companyProgress[c.name] || 0} onChange={(e) => setCompanyProgress(prev => ({ ...prev, [c.name]: parseInt(e.target.value || 0) }))} className="w-20 p-1 border rounded text-xs" />
-                        <div className="text-xs text-gray-500">Problems practiced</div>
-                      </div>
-                    </div>
-
-                    <div className="mt-3">
-                      <details>
-                        <summary className="cursor-pointer text-sm text-blue-600">Past Interview Questions & Experiences</summary>
-                        <div className="mt-2 text-sm text-gray-600">• Example: Explain difference between BFS & DFS. • Experience: Interview involved system design + coding.</div>
-                        <div className="mt-2 text-xs text-gray-500">Prep suggestion: 2–3 weeks focus on {c.name === 'Amazon' ? 'scalability' : 'algorithms'}</div>
-                      </details>
-                    </div>
-                  </div>
-                ))}
-              </div>
-            </div>
-          )}
-
-          {/* Resume Analyzer (Phase 2) */}
-          {activeTab === "resume" && (
-            <div>
-              <h2 className="text-2xl font-bold mb-3">Resume Analyzer</h2>
-              <div className="bg-white p-4 rounded shadow space-y-3">
-                <div>
-                  <label className="block text-sm font-medium text-gray-700">Paste your resume text (best for instant analysis)</label>
-                  <textarea value={resumeText} onChange={(e) => setResumeText(e.target.value)} rows={8} className="w-full p-2 border rounded mt-1" placeholder="Paste resume content here..."></textarea>
-                </div>
-
-                <div className="flex gap-2">
-                  <button onClick={() => {
-                    const r = analyzeResumeText(resumeText || "");
-                    alert(`ATS-like score: ${r.score}/100\nFound keywords: ${r.found.join(", ") || "none"}\nChecks: ${r.checks.join("; ") || "none"}`);
-                  }} className="px-3 py-2 bg-blue-600 text-white rounded">Analyze Text</button>
-
-                  <input type="file" accept=".pdf,.docx,.txt" onChange={(e) => alert("File upload placeholder — paste text for instant analysis in this demo. Full file parsing requires server libraries.")} className="px-3 py-2" />
-                </div>
-
-                <div className="text-sm text-gray-500">Tips: Include skill keywords (JavaScript, Python, React, SQL, AWS). Aim for clear bullet points and contact info.</div>
-              </div>
-            </div>
-          )}
-
-          {/* Analytics (Phase 2) */}
-          {activeTab === "analytics" && (
-            <div>
-              <h2 className="text-2xl font-bold mb-3">Analytics</h2>
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div className="bg-white p-4 rounded shadow">
-                  <h3 className="font-semibold mb-2">Problems solved by topic (sample)</h3>
-                  <SimpleBarChart data={Object.entries(problemsSolved).map(([k, v]) => ({ label: k, value: v || 0 }))} />
-                </div>
-
-                <div className="bg-white p-4 rounded shadow">
-                  <h3 className="font-semibold mb-2">Aptitude accuracy (sample)</h3>
-                  <div className="space-y-2">
-                    {Object.keys(MCQS).map(cat => {
-                      const res = aptitudeState.results[cat] || { attempted: 0, correct: 0 };
-                      const acc = res.attempted ? Math.round((res.correct / res.attempted) * 100) : 0;
-                      return (
-                        <div key={cat}>
-                          <div className="flex justify-between"><div className="font-medium">{cat.toUpperCase()}</div><div>{acc}%</div></div>
-                          <div className="w-full bg-gray-200 h-2 rounded"><div style={{ width: `${acc}%` }} className="bg-blue-500 h-2 rounded" /></div>
-                        </div>
-                      );
-                    })}
-                  </div>
+                  <textarea
+                    placeholder="Add your notes for this topic..."
+                    value={studyNotes[task.id] || ''}
+                    onChange={(e) => addStudyNote(task.id, e.target.value)}
+                    className="w-full mt-2 p-2 text-xs border rounded resize-none"
+                    rows="2"
+                  />
                 </div>
               </div>
             </div>
-          )}
-
-          {/* Mock Interview (Phase 3) */}
-          {activeTab === "mock" && (
-            <div>
-              <h2 className="text-2xl font-bold mb-3">Mock Interview</h2>
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div className="bg-white p-4 rounded shadow">
-                  <div className="flex items-center justify-between">
-                    <div>
-                      <div className="font-semibold">{mock.coding?.prompt?.title || sampleCodingPrompt().title}</div>
-                      <div className="text-sm text-gray-500">{mock.coding?.prompt?.description || sampleCodingPrompt().description}</div>
-                    </div>
-                    <div>
-                      <button onClick={() => startMockCoding(20 * 60)} className="px-3 py-2 bg-blue-600 text-white rounded">Start 20m</button>
-                    </div>
-                  </div>
-
-                  <div className="mt-3">
-                    <label className="text-sm font-medium">Your code (practice only)</label>
-                    <textarea value={mock.coding.answer} onChange={(e) => setMock(m => ({ ...m, coding: { ...m.coding, answer: e.target.value } }))} rows={10} className="w-full p-2 border rounded mt-1" placeholder="// Write your solution here (no execution in this demo)"></textarea>
-                    <div className="flex items-center gap-2 mt-2">
-                      <button onClick={() => { stopMockCoding(); alert("Submission saved to local attempts (community)."); }} className="px-3 py-2 bg-green-600 text-white rounded">Submit</button>
-                      <div className="text-xs text-gray-500">Tip: Practice speaking through your solution while coding.</div>
-                    </div>
-                  </div>
-                </div>
-
-                <div className="bg-white p-4 rounded shadow">
-                  <h4 className="font-semibold">HR / Behavioral Practice</h4>
-                  <div className="mt-2 text-sm text-gray-600">
-                    Try answering: "Tell me about a time you faced conflict in a team." Use STAR (Situation, Task, Action, Result). Save your answers below.
-                  </div>
-                  <div className="mt-3">
-                    <textarea id="hrAnswer" rows={6} className="w-full p-2 border rounded" placeholder="Write your answer here..."></textarea>
-                    <div className="flex gap-2 mt-2">
-                      <button onClick={() => {
-                        const v = document.getElementById("hrAnswer").value;
-                        if (!v.trim()) return alert("Write an answer first.");
-                        setCommunityPosts(p => [{ type: "hrAnswer", text: v, id: Date.now(), date: new Date().toLocaleString() }, ...p]);
-                        document.getElementById("hrAnswer").value = "";
-                        alert("Saved to your local mock answers.");
-                      }} className="px-3 py-2 bg-blue-600 text-white rounded">Save Answer</button>
-                      <button onClick={() => alert("Suggested HR questions: Tell me about a challenge; Describe leadership; Where do you see yourself?")} className="px-3 py-2 bg-gray-200 rounded">Show Questions</button>
-                    </div>
-                  </div>
-                </div>
-              </div>
-
-              <div className="mt-4">
-                <h4 className="font-semibold mb-2">Saved mock attempts (local)</h4>
-                <div className="space-y-2">
-                  {communityPosts.filter(p => p.type === "mockAttempt").map(at => (
-                    <div key={at.id} className="p-2 border rounded bg-white">
-                      <div className="text-sm font-medium">{at.prompt.title}</div>
-                      <div className="text-xs text-gray-500">Submitted: {new Date(at.submittedAt).toLocaleString()}</div>
-                    </div>
-                  ))}
-                  {communityPosts.filter(p => p.type === "mockAttempt").length === 0 && <div className="text-sm text-gray-500">No attempts yet.</div>}
-                </div>
-              </div>
-            </div>
-          )}
-
-          {/* Calendar (Phase 3) */}
-          {activeTab === "calendar" && (
-            <div>
-              <h2 className="text-2xl font-bold mb-3">Calendar & Schedule</h2>
-              <div className="bg-white p-4 rounded shadow mb-3">
-                <AddEventForm onAdd={(t, d, n) => addEvent(t, d, n)} />
-                <div className="mt-3 flex gap-2">
-                  <button onClick={exportICS} className="px-3 py-2 bg-green-600 text-white rounded">Export .ics</button>
-                  <a className="px-3 py-2 bg-blue-600 text-white rounded" href={`https://calendar.google.com/calendar/r/eventedit?text=${encodeURIComponent("Placement event")}`} target="_blank" rel="noreferrer">Open Google Calendar</a>
-                </div>
-              </div>
-
-              <div className="bg-white p-4 rounded shadow">
-                <h4 className="font-semibold mb-2">Upcoming Events</h4>
-                {events.length === 0 ? <div className="text-sm text-gray-500">No events yet</div> : (
-                  <ul className="space-y-2">
-                    {events.map(ev => <li key={ev.id} className="p-2 border rounded"><div className="font-medium">{ev.title}</div><div className="text-xs text-gray-500">{new Date(ev.date).toLocaleString()}</div><div className="text-sm">{ev.note}</div></li>)}
-                  </ul>
-                )}
-              </div>
-            </div>
-          )}
-
-          {/* Community */}
-          {activeTab === "community" && (
-            <div>
-              <h2 className="text-2xl font-bold mb-3">Community & Notes</h2>
-              <div className="bg-white p-4 rounded shadow mb-3">
-                <textarea id="communityText" rows={4} className="w-full p-2 border rounded" placeholder="Share an interview experience or question..."></textarea>
-                <div className="flex gap-2 mt-2">
-                  <button onClick={() => {
-                    const v = document.getElementById("communityText").value;
-                    if (!v.trim()) return alert("Write something first.");
-                    setCommunityPosts(p => [{ type: "post", text: v, id: Date.now(), date: new Date().toLocaleString() }, ...p]);
-                    document.getElementById("communityText").value = "";
-                  }} className="px-3 py-2 bg-blue-600 text-white rounded">Post</button>
-                  <button onClick={() => setCommunityPosts([])} className="px-3 py-2 bg-red-100 rounded">Clear demo posts</button>
-                </div>
-              </div>
-
-              <div className="space-y-3">
-                {communityPosts.length === 0 ? <div className="text-sm text-gray-500">No posts yet — share your experience!</div> : communityPosts.map(p => (
-                  <div key={p.id} className="bg-white p-3 rounded shadow">
-                    <div className="text-sm text-gray-800">{p.text || p.prompt?.title || "[mock attempt]"}</div>
-                    <div className="text-xs text-gray-500 mt-1">{p.date}</div>
-                  </div>
-                ))}
-              </div>
-            </div>
-          )}
-
-        </main>
+          ))}
+        </div>
       </div>
     </div>
   );
-}
 
-/* ---------------- Small child components used above ---------------- */
+  const renderAnalytics = () => (
+    <div className="space-y-6">
+      <div className="bg-white rounded-lg shadow-lg p-6">
+        <h2 className="text-2xl font-bold text-gray-800 mb-4 flex items-center">
+          <BarChart3 className="w-6 h-6 mr-2" />
+          Your Analytics
+        </h2>
 
-function NavButton({ id, label, icon: Icon, active, onClick }) {
-  return (
-    <button onClick={onClick} className={`w-full flex items-center gap-2 px-3 py-2 rounded ${active ? "bg-blue-600 text-white" : "text-gray-700 hover:bg-gray-100"}`}>
-      <Icon className="w-4 h-4" /> <span className="text-sm">{label}</span>
-    </button>
-  );
-}
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+          <div className="bg-gradient-to-r from-green-100 to-green-200 rounded-lg p-4">
+            <h3 className="font-semibold text-green-800 mb-2">Strong Areas</h3>
+            <div className="space-y-1 text-sm">
+              {phases.flatMap(phase => phase.tasks)
+                .filter(task => completedTasks.has(task.id))
+                .slice(0, 3)
+                .map(task => (
+                  <div key={task.id} className="text-green-700">✓ {task.topic}</div>
+                ))}
+            </div>
+          </div>
 
-function AddEventForm({ onAdd }) {
-  const [title, setTitle] = useState("");
-  const [date, setDate] = useState("");
-  const [note, setNote] = useState("");
-  return (
-    <div className="grid grid-cols-1 md:grid-cols-3 gap-2">
-      <input value={title} onChange={(e) => setTitle(e.target.value)} placeholder="Event title" className="p-2 border rounded" />
-      <input value={date} onChange={(e) => setDate(e.target.value)} type="datetime-local" className="p-2 border rounded" />
-      <input value={note} onChange={(e) => setNote(e.target.value)} placeholder="Note (optional)" className="p-2 border rounded" />
-      <div className="md:col-span-3 flex gap-2">
-        <button onClick={() => { if (!title || !date) return alert("Title + date required"); onAdd(title, date, note); setTitle(""); setDate(""); setNote(""); }} className="px-3 py-2 bg-blue-600 text-white rounded">Add Event</button>
-      </div>
-    </div>
-  );
-}
+          <div className="bg-gradient-to-r from-yellow-100 to-yellow-200 rounded-lg p-4">
+            <h3 className="font-semibold text-yellow-800 mb-2">Needs Improvement</h3>
+            <div className="space-y-1 text-sm">
+              {getWeakAreas().map(task => (
+                <div key={task.id} className="text-yellow-700">
+                  ⚡ {task.topic} ({problemsSolved[task.id] || 0}/{task.targetCount})
+                </div>
+              ))}
+            </div>
+          </div>
 
-/* Simple SVG bar chart for demo */
-function SimpleBarChart({ data }) {
-  const max = Math.max(1, ...data.map(d => d.value));
-  return (
-    <div className="space-y-2">
-      {data.map((d, i) => (
-        <div key={i}>
-          <div className="flex justify-between text-sm"><div>{d.label}</div><div>{d.value}</div></div>
-          <div className="w-full bg-gray-200 h-2 rounded">
-            <div style={{ width: `${(d.value / max) * 100}%` }} className="h-2 bg-green-500 rounded" />
+          <div className="bg-gradient-to-r from-blue-100 to-blue-200 rounded-lg p-4">
+            <h3 className="font-semibold text-blue-800 mb-2">Study Stats</h3>
+            <div className="space-y-1 text-sm text-blue-700">
+              <div>📅 Current Streak: {studyStreak} days</div>
+              <div>🎯 Problems Solved: {calculateTotalProblems()}</div>
+              <div>📊 Completion: {calculateProgress()}%</div>
+            </div>
           </div>
         </div>
-      ))}
+      </div>
+
+      <div className="bg-white rounded-lg shadow-lg p-6">
+        <h3 className="text-xl font-bold text-gray-800 mb-4 flex items-center">
+          <Brain className="w-5 h-5 mr-2" />
+          Problem Bookmarks
+        </h3>
+        <div className="grid gap-3">
+          <div className="flex gap-2 mb-3">
+            <input
+              placeholder="Problem name"
+              className="flex-1 px-3 py-2 border rounded"
+              id="bookmark-problem"
+            />
+            <select className="px-3 py-2 border rounded" id="bookmark-difficulty">
+              <option value="Easy">Easy</option>
+              <option value="Medium">Medium</option>
+              <option value="Hard">Hard</option>
+            </select>
+            <input
+              placeholder="Company"
+              className="px-3 py-2 border rounded"
+              id="bookmark-company"
+            />
+            <button
+              onClick={() => {
+                const problem = document.getElementById('bookmark-problem').value;
+                const difficulty = document.getElementById('bookmark-difficulty').value;
+                const company = document.getElementById('bookmark-company').value;
+                if (problem) {
+                  addBookmark(problem, difficulty, company);
+                  document.getElementById('bookmark-problem').value = '';
+                  document.getElementById('bookmark-company').value = '';
+                }
+              }}
+              className="px-4 py-2 bg-blue-500 text-white rounded hover:bg-blue-600"
+            >
+              <Star className="w-4 h-4" />
+            </button>
+          </div>
+
+          <div className="max-h-60 overflow-y-auto">
+            {bookmarkedProblems.map((bookmark) => (
+              <div key={bookmark.id} className="flex items-center justify-between p-3 bg-gray-50 rounded border-l-4 border-blue-500 mb-2">
+                <div>
+                  <div className="font-medium">{bookmark.problem}</div>
+                  <div className="text-sm text-gray-600">
+                    {bookmark.company} • {bookmark.difficulty} • {bookmark.dateAdded}
+                  </div>
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+
+  const renderCompanies = () => (
+    <div className="space-y-6">
+      <div className="bg-white rounded-lg shadow-lg p-6">
+        <h2 className="text-2xl font-bold text-gray-800 mb-6 flex items-center">
+          <Building2 className="w-6 h-6 mr-2" />
+          Target Companies
+        </h2>
+
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          {companies.map((company, index) => (
+            <div key={index} className="border rounded-lg p-4 hover:shadow-md transition-shadow">
+              <div className="flex items-center justify-between mb-3">
+                <h3 className="text-lg font-semibold">{company.name}</h3>
+                <span className={`px-2 py-1 rounded-full text-xs ${company.difficulty === 'Hard' ? 'bg-red-100 text-red-800' :
+                  company.difficulty === 'Medium-Hard' ? 'bg-orange-100 text-orange-800' :
+                    'bg-green-100 text-green-800'
+                  }`}>
+                  {company.difficulty}
+                </span>
+              </div>
+              <p className="text-sm text-gray-600 mb-3">{company.focus}</p>
+              <div className="flex items-center justify-between">
+                <span className="text-sm">Problems Practiced:</span>
+                <input
+                  type="number"
+                  min="0"
+                  value={companyProgress[company.name] || 0}
+                  onChange={(e) => setCompanyProgress(prev => ({
+                    ...prev,
+                    [company.name]: parseInt(e.target.value) || 0
+                  }))}
+                  className="w-16 px-2 py-1 text-sm border rounded"
+                />
+              </div>
+            </div>
+          ))}
+        </div>
+      </div>
+    </div>
+  );
+
+  const renderSchedule = () => (
+    <div className="bg-white rounded-lg shadow-lg p-6">
+      <h2 className="text-2xl font-bold text-gray-800 mb-6 flex items-center">
+        <Calendar className="w-6 h-6 mr-2" />
+        Study Schedule
+      </h2>
+
+      <div className="grid grid-cols-1 md:grid-cols-7 gap-4">
+        {['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'].map((day, index) => (
+          <div key={day} className="border rounded-lg p-4">
+            <h3 className="font-semibold text-center mb-3">{day}</h3>
+            <div className="space-y-2 text-sm">
+              <div className="bg-blue-100 p-2 rounded">
+                <div className="font-medium">9:00-11:00 AM</div>
+                <div>DSA Practice</div>
+              </div>
+              <div className="bg-green-100 p-2 rounded">
+                <div className="font-medium">2:00-4:00 PM</div>
+                <div>Mock Interview</div>
+              </div>
+              <div className="bg-purple-100 p-2 rounded">
+                <div className="font-medium">7:00-8:00 PM</div>
+                <div>Review & Notes</div>
+              </div>
+            </div>
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+
+  return (
+    <div className="max-w-7xl mx-auto p-6 bg-gray-50 min-h-screen">
+      <div className="bg-white rounded-lg shadow-lg p-6 mb-6">
+        <div className="text-center mb-6">
+          <h1 className="text-4xl font-bold text-gray-800 mb-2">Advanced Placement Prep Dashboard</h1>
+          <p className="text-lg text-gray-600">Complete tracking system for your campus placement journey</p>
+
+          <div className="flex justify-center gap-4 mt-4">
+            <button
+              onClick={exportProgress}
+              className="flex items-center gap-2 px-4 py-2 bg-green-500 text-white rounded hover:bg-green-600"
+            >
+              <Download className="w-4 h-4" />
+              Export Progress
+            </button>
+          </div>
+        </div>
+
+        <div className="flex flex-wrap justify-center gap-2 mb-6">
+          {[
+            { id: 'roadmap', label: 'Roadmap', icon: Target },
+            { id: 'analytics', label: 'Analytics', icon: BarChart3 },
+            { id: 'companies', label: 'Companies', icon: Building2 },
+            { id: 'schedule', label: 'Schedule', icon: Calendar }
+          ].map(tab => (
+            <button
+              key={tab.id}
+              onClick={() => setActiveTab(tab.id)}
+              className={`flex items-center gap-2 px-4 py-2 rounded-lg transition-colors ${activeTab === tab.id
+                ? 'bg-blue-500 text-white'
+                : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+                }`}
+            >
+              <tab.icon className="w-4 h-4" />
+              {tab.label}
+            </button>
+          ))}
+        </div>
+
+        {activeTab === 'roadmap' && renderRoadmap()}
+        {activeTab === 'analytics' && renderAnalytics()}
+        {activeTab === 'companies' && renderCompanies()}
+        {activeTab === 'schedule' && renderSchedule()}
+      </div>
     </div>
   );
 }
-

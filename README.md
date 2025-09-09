@@ -87,7 +87,3 @@ npm run build
 ### 🙌 Acknowledgements
 
 #### This project is inspired by the need for a structured placement preparation plan for students in Computer Science and related fields.
-
-```
-
-```
