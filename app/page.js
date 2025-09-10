@@ -1,453 +1,357 @@
-'use client'
-
 import React, { useState, useEffect } from 'react';
-import { CheckCircle2, Circle, Calendar, BookOpen, Code, Trophy, Target, Clock, Download, Upload, BarChart3, Brain, Users, Building2, Timer, Star, FileText, TrendingUp } from 'lucide-react';
+import { Calendar, CheckSquare, Square, Trophy, Target, TrendingUp, Book, Building, User, Moon, Sun, Star, Award, Clock, BarChart3, Users, FileText, MessageSquare, Settings, Play, CheckCircle, AlertCircle } from 'lucide-react';
+import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, BarChart, Bar, PieChart, Pie, Cell } from 'recharts';
 
-export default function PlacementRoadmap() {
-  const [completedTasks, setCompletedTasks] = useState(new Set());
-  const [currentPhase, setCurrentPhase] = useState(0);
-  const [activeTab, setActiveTab] = useState('roadmap');
-  const [studyStreak, setStudyStreak] = useState(0);
-  const [lastStudyDate, setLastStudyDate] = useState(null);
-  const [problemsSolved, setProblemsSolved] = useState({});
-  const [studyNotes, setStudyNotes] = useState({});
-  const [bookmarkedProblems, setBookmarkedProblems] = useState([]);
-  const [companyProgress, setCompanyProgress] = useState({});
-  const [timeSpent, setTimeSpent] = useState({});
+const PlacementPrepApp = () => {
+  const [darkMode, setDarkMode] = useState(false);
+  const [activeTab, setActiveTab] = useState('dashboard');
+  const [userData, setUserData] = useState({
+    name: 'Student',
+    streak: 15,
+    totalProblems: 127,
+    xp: 2850,
+    level: 8,
+    lastActive: new Date().toISOString().split('T')[0]
+  });
 
-  // Load data from localStorage on component mount
+  // DSA Topics with problems
+  const [dsaTopics, setDsaTopics] = useState({
+    foundation: [
+      { name: 'Arrays', completed: 45, total: 50, checked: false },
+      { name: 'Strings', completed: 32, total: 40, checked: false },
+      { name: 'Linked Lists', completed: 28, total: 35, checked: false },
+      { name: 'Stacks & Queues', completed: 25, total: 30, checked: false }
+    ],
+    core: [
+      { name: 'Trees', completed: 38, total: 50, checked: false },
+      { name: 'Graphs', completed: 22, total: 45, checked: false },
+      { name: 'Dynamic Programming', completed: 15, total: 60, checked: false },
+      { name: 'Recursion', completed: 30, total: 35, checked: false }
+    ],
+    advanced: [
+      { name: 'Segment Trees', completed: 8, total: 25, checked: false },
+      { name: 'Trie', completed: 12, total: 20, checked: false },
+      { name: 'Advanced Graphs', completed: 5, total: 30, checked: false }
+    ]
+  });
+
+  // Company-wise questions
+  const companies = [
+    { name: 'Google', logo: '🔍', questions: 145, difficulty: 'Hard', color: 'bg-blue-500' },
+    { name: 'Amazon', logo: '📦', questions: 198, difficulty: 'Medium', color: 'bg-orange-500' },
+    { name: 'Microsoft', logo: '💻', questions: 167, difficulty: 'Medium', color: 'bg-green-500' },
+    { name: 'Meta', logo: '👥', questions: 123, difficulty: 'Hard', color: 'bg-purple-500' },
+    { name: 'Apple', logo: '🍎', questions: 89, difficulty: 'Medium', color: 'bg-gray-600' },
+    { name: 'Netflix', logo: '🎬', questions: 76, difficulty: 'Hard', color: 'bg-red-500' }
+  ];
+
+  // Progress data for charts
+  const progressData = [
+    { name: 'Week 1', problems: 12, xp: 240 },
+    { name: 'Week 2', problems: 18, xp: 360 },
+    { name: 'Week 3', problems: 25, xp: 500 },
+    { name: 'Week 4', problems: 22, xp: 440 },
+    { name: 'Week 5', problems: 28, xp: 560 },
+    { name: 'Week 6', problems: 22, xp: 440 }
+  ];
+
+  const phaseData = [
+    { name: 'Foundation', completed: 65, total: 100, color: '#22c55e' },
+    { name: 'Core DSA', completed: 45, total: 100, color: '#3b82f6' },
+    { name: 'Advanced', completed: 25, total: 100, color: '#f59e0b' },
+    { name: 'Interview', completed: 35, total: 100, color: '#ef4444' }
+  ];
+
+  // Badges and achievements
+  const badges = [
+    { name: 'Arrays Master', icon: '🎯', earned: true, xp: 500 },
+    { name: '50 Problems', icon: '⭐', earned: true, xp: 300 },
+    { name: '7 Day Streak', icon: '🔥', earned: true, xp: 200 },
+    { name: 'Graph Explorer', icon: '🗺️', earned: false, xp: 400 },
+    { name: 'DP Champion', icon: '🏆', earned: false, xp: 600 },
+    { name: '100 Problems', icon: '💯', earned: false, xp: 500 }
+  ];
+
+  // Mock interviews
+  const [mockInterviews, setMockInterviews] = useState([
+    { id: 1, company: 'Google', date: '2024-09-08', score: 8.5, completed: true },
+    { id: 2, company: 'Amazon', date: '2024-09-06', score: 7.2, completed: true },
+    { id: 3, company: 'Microsoft', date: '2024-09-10', score: 0, completed: false }
+  ]);
+
+  // Goals
+  const [goals, setGoals] = useState([
+    { id: 1, text: 'Solve 3 problems daily', target: 3, current: 2, active: true },
+    { id: 2, text: 'Complete Trees section', target: 50, current: 38, active: true },
+    { id: 3, text: 'Practice mock interviews', target: 5, current: 2, active: true }
+  ]);
+
+  // HR Questions
+  const hrQuestions = [
+    "Tell me about yourself",
+    "Why do you want to work here?",
+    "What are your strengths and weaknesses?",
+    "Where do you see yourself in 5 years?",
+    "Why are you leaving your current job?",
+    "Describe a challenging project you worked on"
+  ];
+
+  // Resources
+  const resources = {
+    youtube: [
+      { name: 'Striver DSA', url: 'https://youtube.com/@takeUforward', topics: ['DSA', 'CP'] },
+      { name: 'Apna College', url: 'https://youtube.com/@ApnaCollegeOfficial', topics: ['DSA', 'Web Dev'] },
+      { name: 'CodeWithHarry', url: 'https://youtube.com/@CodeWithHarry', topics: ['Programming', 'Web Dev'] }
+    ],
+    sheets: [
+      { name: 'Striver SDE Sheet', problems: 191, difficulty: 'Medium-Hard' },
+      { name: 'Love Babbar 450', problems: 450, difficulty: 'All Levels' },
+      { name: 'Apna College Sheet', problems: 200, difficulty: 'Beginner-Medium' }
+    ]
+  };
+
   useEffect(() => {
-    if (typeof window !== 'undefined') {
-      const saved = localStorage.getItem('placementProgress');
-      if (saved) {
-        try {
-          const data = JSON.parse(saved);
-          setCompletedTasks(new Set(data.completedTasks || []));
-          setProblemsSolved(data.problemsSolved || {});
-          setStudyNotes(data.studyNotes || {});
-          setBookmarkedProblems(data.bookmarkedProblems || []);
-          setCompanyProgress(data.companyProgress || {});
-          setStudyStreak(data.studyStreak || 0);
-          setLastStudyDate(data.lastStudyDate);
-        } catch (error) {
-          console.error('Error loading saved progress:', error);
-        }
-      }
+    // Update streak logic
+    const today = new Date().toISOString().split('T')[0];
+    if (userData.lastActive !== today) {
+      setUserData(prev => ({ ...prev, lastActive: today, streak: prev.streak + 1 }));
     }
   }, []);
 
-  // Save to localStorage whenever data changes
-  useEffect(() => {
-    if (typeof window !== 'undefined') {
-      const data = {
-        completedTasks: Array.from(completedTasks),
-        problemsSolved,
-        studyNotes,
-        bookmarkedProblems,
-        companyProgress,
-        studyStreak,
-        lastStudyDate
-      };
-      localStorage.setItem('placementProgress', JSON.stringify(data));
+  const toggleTopic = (phase, index) => {
+    setDsaTopics(prev => ({
+      ...prev,
+      [phase]: prev[phase].map((topic, i) =>
+        i === index ? { ...topic, checked: !topic.checked } : topic
+      )
+    }));
+  };
+
+  const addCustomGoal = () => {
+    const text = prompt('Enter your goal:');
+    const target = parseInt(prompt('Enter target number:'));
+    if (text && target) {
+      setGoals(prev => [...prev, {
+        id: Date.now(),
+        text,
+        target,
+        current: 0,
+        active: true
+      }]);
     }
-  }, [completedTasks, problemsSolved, studyNotes, bookmarkedProblems, companyProgress, studyStreak, lastStudyDate]);
-
-  // Update streak logic
-  useEffect(() => {
-    if (completedTasks.size > 0) {
-      const today = new Date().toDateString();
-      if (lastStudyDate === today) {
-        // Already studied today
-      } else if (lastStudyDate === new Date(Date.now() - 86400000).toDateString()) {
-        // Studied yesterday, increment streak
-        setStudyStreak(prev => prev + 1);
-        setLastStudyDate(today);
-      } else if (lastStudyDate !== null && lastStudyDate !== today) {
-        // Broke streak or first time
-        setStudyStreak(1);
-        setLastStudyDate(today);
-      } else if (lastStudyDate === null) {
-        // First time
-        setStudyStreak(1);
-        setLastStudyDate(today);
-      }
-    }
-  }, [completedTasks, lastStudyDate]);
-
-  const toggleTask = (taskId) => {
-    const newCompleted = new Set(completedTasks);
-    const today = new Date().toDateString();
-
-    if (newCompleted.has(taskId)) {
-      newCompleted.delete(taskId);
-    } else {
-      newCompleted.add(taskId);
-      // Update streak on first completion of the day
-      if (lastStudyDate !== today) {
-        setLastStudyDate(today);
-        setStudyStreak(prev => prev + 1);
-      }
-    }
-    setCompletedTasks(newCompleted);
   };
 
-  const updateProblemCount = (topicId, count) => {
-    setProblemsSolved(prev => ({ ...prev, [topicId]: count }));
-  };
+  const TabButton = ({ id, icon: Icon, label, active, onClick }) => (
+    <button
+      onClick={() => onClick(id)}
+      className={`flex items-center gap-2 px-4 py-2 rounded-lg transition-colors ${active
+        ? darkMode
+          ? 'bg-blue-600 text-white'
+          : 'bg-blue-500 text-white'
+        : darkMode
+          ? 'text-gray-300 hover:bg-gray-700'
+          : 'text-gray-600 hover:bg-gray-100'
+        }`}
+    >
+      <Icon size={18} />
+      <span className="hidden sm:inline">{label}</span>
+    </button>
+  );
 
-  const addStudyNote = (topicId, note) => {
-    setStudyNotes(prev => ({ ...prev, [topicId]: note }));
-  };
+  const ProgressBar = ({ completed, total, color = 'bg-blue-500' }) => (
+    <div className={`w-full ${darkMode ? 'bg-gray-700' : 'bg-gray-200'} rounded-full h-3`}>
+      <div
+        className={`${color} h-3 rounded-full transition-all duration-300`}
+        style={{ width: `${(completed / total) * 100}%` }}
+      />
+    </div>
+  );
 
-  const addBookmark = (problem, difficulty, company) => {
-    const newBookmark = {
-      id: Date.now(),
-      problem,
-      difficulty,
-      company,
-      dateAdded: new Date().toLocaleDateString()
-    };
-    setBookmarkedProblems(prev => [...prev, newBookmark]);
-  };
-
-  const exportProgress = () => {
-    const data = {
-      completedTasks: Array.from(completedTasks),
-      problemsSolved,
-      studyNotes,
-      bookmarkedProblems,
-      studyStreak,
-      companyProgress,
-      timeSpent,
-      exportDate: new Date().toISOString()
-    };
-    const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement('a');
-    a.href = url;
-    a.download = 'placement-progress.json';
-    a.click();
-    URL.revokeObjectURL(url);
-  };
-
-  const phases = [
-    {
-      title: "Foundation Phase",
-      duration: "3-4 weeks",
-      description: "Build strong fundamentals",
-      color: "bg-blue-500",
-      tasks: [
-        { id: 'array-basics', topic: 'Arrays', target: '40+ problems', details: 'Two pointers, sliding window, prefix sum', targetCount: 40 },
-        { id: 'string-basics', topic: 'Strings', target: '25+ problems', details: 'Pattern matching, manipulation, palindromes', targetCount: 25 },
-        { id: 'sorting', topic: 'Sorting & Searching', target: '20+ problems', details: 'Binary search variants, sorting algorithms', targetCount: 20 },
-        { id: 'time-space', topic: 'Time & Space Complexity', target: 'Master Big O', details: 'Analyze and optimize solutions', targetCount: 10 }
-      ]
-    },
-    {
-      title: "Core DSA Phase",
-      duration: "4-5 weeks",
-      description: "Master essential data structures",
-      color: "bg-green-500",
-      tasks: [
-        { id: 'linkedlist', topic: 'Linked Lists', target: '25+ problems', details: 'Reversal, cycle detection, merging', targetCount: 25 },
-        { id: 'stacks-queues', topic: 'Stacks & Queues', target: '20+ problems', details: 'Monotonic stack, deque, priority queue', targetCount: 20 },
-        { id: 'trees', topic: 'Binary Trees', target: '35+ problems', details: 'Traversals, BST, tree construction', targetCount: 35 },
-        { id: 'hashing', topic: 'Hashing', target: '20+ problems', details: 'HashMap, frequency counting, two sum variants', targetCount: 20 }
-      ]
-    },
-    {
-      title: "Advanced Phase",
-      duration: "3-4 weeks",
-      description: "Tackle complex algorithms",
-      color: "bg-purple-500",
-      tasks: [
-        { id: 'graphs', topic: 'Graphs', target: '25+ problems', details: 'DFS, BFS, shortest path, topological sort', targetCount: 25 },
-        { id: 'dp', topic: 'Dynamic Programming', target: '30+ problems', details: '1D/2D DP, knapsack, LCS, LIS', targetCount: 30 },
-        { id: 'recursion', topic: 'Recursion & Backtracking', target: '20+ problems', details: 'N-Queens, subsets, permutations', targetCount: 20 },
-        { id: 'greedy', topic: 'Greedy Algorithms', target: '15+ problems', details: 'Activity selection, interval problems', targetCount: 15 }
-      ]
-    },
-    {
-      title: "Interview Prep Phase",
-      duration: "2-3 weeks",
-      description: "Mock interviews & system design",
-      color: "bg-red-500",
-      tasks: [
-        { id: 'mock-coding', topic: 'Mock Coding Interviews', target: '10+ sessions', details: 'Practice with timer, explain approach', targetCount: 10 },
-        { id: 'system-design', topic: 'Basic System Design', target: '5+ concepts', details: 'Scalability, databases, APIs', targetCount: 5 },
-        { id: 'behavioral', topic: 'Behavioral Questions', target: 'STAR method', details: 'Leadership, teamwork, challenges', targetCount: 8 },
-        { id: 'company-prep', topic: 'Company-Specific Prep', target: '5+ companies', details: 'Past questions, company culture', targetCount: 5 }
-      ]
-    }
-  ];
-
-  const companies = [
-    { name: 'Google', difficulty: 'Hard', focus: 'Algorithms, System Design' },
-    { name: 'Microsoft', difficulty: 'Medium-Hard', focus: 'Problem Solving, Coding' },
-    { name: 'Amazon', difficulty: 'Medium', focus: 'Leadership, Scalability' },
-    { name: 'Meta', difficulty: 'Hard', focus: 'Data Structures, Optimization' },
-    { name: 'Apple', difficulty: 'Medium-Hard', focus: 'Innovation, Technical Depth' },
-    { name: 'Netflix', difficulty: 'Hard', focus: 'Culture Fit, Technical Excellence' }
-  ];
-
-  const calculateProgress = () => {
-    const totalTasks = phases.reduce((sum, phase) => sum + phase.tasks.length, 0);
-    const completed = completedTasks.size;
-    return Math.round((completed / totalTasks) * 100);
-  };
-
-  const calculateTotalProblems = () => {
-    return Object.values(problemsSolved).reduce((sum, count) => sum + (count || 0), 0);
-  };
-
-  const getWeakAreas = () => {
-    const allTasks = phases.flatMap(phase => phase.tasks);
-    return allTasks
-      .filter(task => !completedTasks.has(task.id) && (problemsSolved[task.id] || 0) < task.targetCount * 0.5)
-      .slice(0, 3);
-  };
-
-  const renderRoadmap = () => (
-    <div>
-      <div className="bg-gradient-to-r from-blue-500 to-purple-600 rounded-lg p-4 text-white mb-6">
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-4 text-center">
-          <div>
-            <Trophy className="w-8 h-8 mx-auto mb-2" />
-            <div className="text-2xl font-bold">{calculateProgress()}%</div>
-            <div className="text-sm opacity-90">Overall Progress</div>
-          </div>
-          <div>
-            <Target className="w-8 h-8 mx-auto mb-2" />
-            <div className="text-2xl font-bold">{calculateTotalProblems()}</div>
-            <div className="text-sm opacity-90">Problems Solved</div>
-          </div>
-          <div>
-            <Calendar className="w-8 h-8 mx-auto mb-2" />
-            <div className="text-2xl font-bold">{studyStreak}</div>
-            <div className="text-sm opacity-90">Day Streak</div>
-          </div>
+  const StatCard = ({ icon: Icon, title, value, subtitle, color = 'text-blue-500' }) => (
+    <div className={`p-6 rounded-xl ${darkMode ? 'bg-gray-800' : 'bg-white'} shadow-lg`}>
+      <div className="flex items-center justify-between">
+        <div>
+          <p className={`text-sm ${darkMode ? 'text-gray-400' : 'text-gray-600'}`}>{title}</p>
+          <p className="text-2xl font-bold mt-1">{value}</p>
+          {subtitle && <p className={`text-xs ${darkMode ? 'text-gray-500' : 'text-gray-500'} mt-1`}>{subtitle}</p>}
         </div>
+        <Icon className={`${color} opacity-80`} size={32} />
+      </div>
+    </div>
+  );
+
+  const renderDashboard = () => (
+    <div className="space-y-6">
+      {/* Stats Cards */}
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+        <StatCard icon={Target} title="Current Streak" value={`${userData.streak} days`} subtitle="Keep it up!" color="text-orange-500" />
+        <StatCard icon={CheckSquare} title="Problems Solved" value={userData.totalProblems} subtitle="This month: 47" color="text-green-500" />
+        <StatCard icon={Star} title="XP Points" value={userData.xp} subtitle={`Level ${userData.level}`} color="text-purple-500" />
+        <StatCard icon={Trophy} title="Badges Earned" value={badges.filter(b => b.earned).length} subtitle={`/${badges.length} total`} color="text-yellow-500" />
       </div>
 
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
-        {phases.map((phase, index) => (
-          <div
-            key={index}
-            className={`p-4 rounded-lg cursor-pointer transition-all ${currentPhase === index ? 'ring-2 ring-blue-400' : ''
-              } ${phase.color} text-white`}
-            onClick={() => setCurrentPhase(index)}
-          >
-            <h3 className="font-bold text-lg mb-1">{phase.title}</h3>
-            <p className="text-sm opacity-90 mb-2">{phase.duration}</p>
-            <p className="text-xs">{phase.description}</p>
-            <div className="mt-2 text-xs">
-              {phase.tasks.filter(task => completedTasks.has(task.id)).length}/{phase.tasks.length} completed
-            </div>
-          </div>
-        ))}
-      </div>
-
-      <div className="bg-gray-50 rounded-lg p-6">
-        <div className="flex items-center justify-between mb-4">
-          <div className="flex items-center">
-            <Target className="w-6 h-6 mr-2 text-blue-600" />
-            <h2 className="text-2xl font-bold text-gray-800">{phases[currentPhase].title}</h2>
-          </div>
-          <span className="bg-blue-100 text-blue-800 px-3 py-1 rounded-full text-sm">
-            {phases[currentPhase].duration}
-          </span>
-        </div>
-
-        <div className="grid gap-4">
-          {phases[currentPhase].tasks.map((task) => (
-            <div key={task.id} className="bg-white rounded-lg p-4 shadow-sm border">
-              <div className="flex items-start">
-                <button
-                  onClick={() => toggleTask(task.id)}
-                  className="mr-3 mt-1 flex-shrink-0"
-                >
-                  {completedTasks.has(task.id) ? (
-                    <CheckCircle2 className="w-6 h-6 text-green-500" />
-                  ) : (
-                    <Circle className="w-6 h-6 text-gray-400" />
-                  )}
-                </button>
-                <div className="flex-grow">
-                  <div className="flex items-center justify-between mb-2">
-                    <h3 className={`text-lg font-semibold ${completedTasks.has(task.id) ? 'text-green-600 line-through' : 'text-gray-800'
-                      }`}>
-                      {task.topic}
-                    </h3>
-                    <div className="flex items-center gap-2">
-                      <span className="bg-blue-100 text-blue-800 px-2 py-1 rounded-full text-xs">
-                        {problemsSolved[task.id] || 0}/{task.targetCount}
-                      </span>
-                      <input
-                        type="number"
-                        min="0"
-                        max={task.targetCount}
-                        value={problemsSolved[task.id] || 0}
-                        onChange={(e) => updateProblemCount(task.id, parseInt(e.target.value) || 0)}
-                        className="w-16 px-2 py-1 text-xs border rounded"
-                        placeholder="0"
-                      />
-                    </div>
-                  </div>
-                  <p className="text-sm text-gray-600 mb-2">{task.details}</p>
-                  <div className="w-full bg-gray-200 rounded-full h-2">
-                    <div
-                      className="bg-blue-500 rounded-full h-2 transition-all duration-300"
-                      style={{ width: `${Math.min(((problemsSolved[task.id] || 0) / task.targetCount) * 100, 100)}%` }}
-                    ></div>
-                  </div>
-                  <textarea
-                    placeholder="Add your notes for this topic..."
-                    value={studyNotes[task.id] || ''}
-                    onChange={(e) => addStudyNote(task.id, e.target.value)}
-                    className="w-full mt-2 p-2 text-xs border rounded resize-none"
-                    rows="2"
-                  />
-                </div>
+      {/* Phase Progress */}
+      <div className={`p-6 rounded-xl ${darkMode ? 'bg-gray-800' : 'bg-white'} shadow-lg`}>
+        <h3 className="text-xl font-bold mb-4">Phase Progress</h3>
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+          {phaseData.map((phase, index) => (
+            <div key={index} className="space-y-2">
+              <div className="flex justify-between items-center">
+                <span className="font-medium">{phase.name}</span>
+                <span className="text-sm font-medium">{phase.completed}%</span>
               </div>
+              <ProgressBar completed={phase.completed} total={100} color={phase.color.replace('#', 'bg-[') + ']'} />
             </div>
           ))}
+        </div>
+      </div>
+
+      {/* Charts */}
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        <div className={`p-6 rounded-xl ${darkMode ? 'bg-gray-800' : 'bg-white'} shadow-lg`}>
+          <h3 className="text-xl font-bold mb-4">Weekly Progress</h3>
+          <ResponsiveContainer width="100%" height={250}>
+            <LineChart data={progressData}>
+              <CartesianGrid strokeDasharray="3 3" stroke={darkMode ? '#374151' : '#e5e7eb'} />
+              <XAxis dataKey="name" stroke={darkMode ? '#9ca3af' : '#6b7280'} />
+              <YAxis stroke={darkMode ? '#9ca3af' : '#6b7280'} />
+              <Tooltip
+                contentStyle={{
+                  backgroundColor: darkMode ? '#1f2937' : '#ffffff',
+                  border: 'none',
+                  borderRadius: '8px',
+                  color: darkMode ? '#ffffff' : '#000000'
+                }}
+              />
+              <Line type="monotone" dataKey="problems" stroke="#3b82f6" strokeWidth={3} dot={{ fill: '#3b82f6' }} />
+            </LineChart>
+          </ResponsiveContainer>
+        </div>
+
+        <div className={`p-6 rounded-xl ${darkMode ? 'bg-gray-800' : 'bg-white'} shadow-lg`}>
+          <h3 className="text-xl font-bold mb-4">XP Growth</h3>
+          <ResponsiveContainer width="100%" height={250}>
+            <BarChart data={progressData}>
+              <CartesianGrid strokeDasharray="3 3" stroke={darkMode ? '#374151' : '#e5e7eb'} />
+              <XAxis dataKey="name" stroke={darkMode ? '#9ca3af' : '#6b7280'} />
+              <YAxis stroke={darkMode ? '#9ca3af' : '#6b7280'} />
+              <Tooltip
+                contentStyle={{
+                  backgroundColor: darkMode ? '#1f2937' : '#ffffff',
+                  border: 'none',
+                  borderRadius: '8px',
+                  color: darkMode ? '#ffffff' : '#000000'
+                }}
+              />
+              <Bar dataKey="xp" fill="#10b981" radius={[4, 4, 0, 0]} />
+            </BarChart>
+          </ResponsiveContainer>
         </div>
       </div>
     </div>
   );
 
-  const renderAnalytics = () => (
+  const renderTopics = () => (
     <div className="space-y-6">
-      <div className="bg-white rounded-lg shadow-lg p-6">
-        <h2 className="text-2xl font-bold text-gray-800 mb-4 flex items-center">
-          <BarChart3 className="w-6 h-6 mr-2" />
-          Your Analytics
-        </h2>
-
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-          <div className="bg-gradient-to-r from-green-100 to-green-200 rounded-lg p-4">
-            <h3 className="font-semibold text-green-800 mb-2">Strong Areas</h3>
-            <div className="space-y-1 text-sm">
-              {phases.flatMap(phase => phase.tasks)
-                .filter(task => completedTasks.has(task.id))
-                .slice(0, 3)
-                .map(task => (
-                  <div key={task.id} className="text-green-700">✓ {task.topic}</div>
-                ))}
-            </div>
-          </div>
-
-          <div className="bg-gradient-to-r from-yellow-100 to-yellow-200 rounded-lg p-4">
-            <h3 className="font-semibold text-yellow-800 mb-2">Needs Improvement</h3>
-            <div className="space-y-1 text-sm">
-              {getWeakAreas().map(task => (
-                <div key={task.id} className="text-yellow-700">
-                  ⚡ {task.topic} ({problemsSolved[task.id] || 0}/{task.targetCount})
-                </div>
-              ))}
-            </div>
-          </div>
-
-          <div className="bg-gradient-to-r from-blue-100 to-blue-200 rounded-lg p-4">
-            <h3 className="font-semibold text-blue-800 mb-2">Study Stats</h3>
-            <div className="space-y-1 text-sm text-blue-700">
-              <div>📅 Current Streak: {studyStreak} days</div>
-              <div>🎯 Problems Solved: {calculateTotalProblems()}</div>
-              <div>📊 Completion: {calculateProgress()}%</div>
-            </div>
-          </div>
-        </div>
-      </div>
-
-      <div className="bg-white rounded-lg shadow-lg p-6">
-        <h3 className="text-xl font-bold text-gray-800 mb-4 flex items-center">
-          <Brain className="w-5 h-5 mr-2" />
-          Problem Bookmarks
-        </h3>
-        <div className="grid gap-3">
-          <div className="flex gap-2 mb-3">
-            <input
-              placeholder="Problem name"
-              className="flex-1 px-3 py-2 border rounded"
-              id="bookmark-problem"
-            />
-            <select className="px-3 py-2 border rounded" id="bookmark-difficulty">
-              <option value="Easy">Easy</option>
-              <option value="Medium">Medium</option>
-              <option value="Hard">Hard</option>
-            </select>
-            <input
-              placeholder="Company"
-              className="px-3 py-2 border rounded"
-              id="bookmark-company"
-            />
-            <button
-              onClick={() => {
-                const problem = document.getElementById('bookmark-problem').value;
-                const difficulty = document.getElementById('bookmark-difficulty').value;
-                const company = document.getElementById('bookmark-company').value;
-                if (problem) {
-                  addBookmark(problem, difficulty, company);
-                  document.getElementById('bookmark-problem').value = '';
-                  document.getElementById('bookmark-company').value = '';
-                }
-              }}
-              className="px-4 py-2 bg-blue-500 text-white rounded hover:bg-blue-600"
-            >
-              <Star className="w-4 h-4" />
-            </button>
-          </div>
-
-          <div className="max-h-60 overflow-y-auto">
-            {bookmarkedProblems.map((bookmark) => (
-              <div key={bookmark.id} className="flex items-center justify-between p-3 bg-gray-50 rounded border-l-4 border-blue-500 mb-2">
-                <div>
-                  <div className="font-medium">{bookmark.problem}</div>
-                  <div className="text-sm text-gray-600">
-                    {bookmark.company} • {bookmark.difficulty} • {bookmark.dateAdded}
+      {Object.entries(dsaTopics).map(([phase, topics]) => (
+        <div key={phase} className={`p-6 rounded-xl ${darkMode ? 'bg-gray-800' : 'bg-white'} shadow-lg`}>
+          <h3 className="text-xl font-bold mb-4 capitalize">{phase} DSA</h3>
+          <div className="grid gap-4">
+            {topics.map((topic, index) => (
+              <div key={index} className={`p-4 rounded-lg ${darkMode ? 'bg-gray-700' : 'bg-gray-50'} flex items-center justify-between`}>
+                <div className="flex items-center gap-3">
+                  <button
+                    onClick={() => toggleTopic(phase, index)}
+                    className="text-blue-500 hover:text-blue-600"
+                  >
+                    {topic.checked ? <CheckSquare size={20} /> : <Square size={20} />}
+                  </button>
+                  <div>
+                    <h4 className="font-medium">{topic.name}</h4>
+                    <p className={`text-sm ${darkMode ? 'text-gray-400' : 'text-gray-600'}`}>
+                      {topic.completed}/{topic.total} problems completed
+                    </p>
                   </div>
+                </div>
+                <div className="text-right">
+                  <div className="w-24 mb-1">
+                    <ProgressBar completed={topic.completed} total={topic.total} />
+                  </div>
+                  <span className="text-sm font-medium">{Math.round((topic.completed / topic.total) * 100)}%</span>
                 </div>
               </div>
             ))}
           </div>
         </div>
-      </div>
+      ))}
     </div>
   );
 
   const renderCompanies = () => (
-    <div className="space-y-6">
-      <div className="bg-white rounded-lg shadow-lg p-6">
-        <h2 className="text-2xl font-bold text-gray-800 mb-6 flex items-center">
-          <Building2 className="w-6 h-6 mr-2" />
-          Target Companies
-        </h2>
+    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+      {companies.map((company, index) => (
+        <div key={index} className={`p-6 rounded-xl ${darkMode ? 'bg-gray-800' : 'bg-white'} shadow-lg hover:shadow-xl transition-shadow cursor-pointer`}>
+          <div className="flex items-center gap-3 mb-4">
+            <div className={`${company.color} text-white p-3 rounded-lg text-2xl`}>
+              {company.logo}
+            </div>
+            <div>
+              <h3 className="text-lg font-bold">{company.name}</h3>
+              <p className={`text-sm ${darkMode ? 'text-gray-400' : 'text-gray-600'}`}>{company.difficulty}</p>
+            </div>
+          </div>
+          <div className="space-y-2">
+            <div className="flex justify-between">
+              <span>Questions Available</span>
+              <span className="font-bold">{company.questions}</span>
+            </div>
+            <button className="w-full bg-blue-500 text-white py-2 rounded-lg hover:bg-blue-600 transition-colors">
+              Practice Questions
+            </button>
+          </div>
+        </div>
+      ))}
+    </div>
+  );
 
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-          {companies.map((company, index) => (
-            <div key={index} className="border rounded-lg p-4 hover:shadow-md transition-shadow">
-              <div className="flex items-center justify-between mb-3">
-                <h3 className="text-lg font-semibold">{company.name}</h3>
-                <span className={`px-2 py-1 rounded-full text-xs ${company.difficulty === 'Hard' ? 'bg-red-100 text-red-800' :
-                  company.difficulty === 'Medium-Hard' ? 'bg-orange-100 text-orange-800' :
-                    'bg-green-100 text-green-800'
-                  }`}>
-                  {company.difficulty}
-                </span>
+  const renderSchedule = () => (
+    <div className="space-y-6">
+      {/* Goals */}
+      <div className={`p-6 rounded-xl ${darkMode ? 'bg-gray-800' : 'bg-white'} shadow-lg`}>
+        <div className="flex justify-between items-center mb-4">
+          <h3 className="text-xl font-bold">Daily Goals</h3>
+          <button
+            onClick={addCustomGoal}
+            className="bg-blue-500 text-white px-4 py-2 rounded-lg hover:bg-blue-600 transition-colors"
+          >
+            Add Goal
+          </button>
+        </div>
+        <div className="space-y-4">
+          {goals.map((goal) => (
+            <div key={goal.id} className={`p-4 rounded-lg ${darkMode ? 'bg-gray-700' : 'bg-gray-50'}`}>
+              <div className="flex justify-between items-center mb-2">
+                <span className="font-medium">{goal.text}</span>
+                <span className="text-sm">{goal.current}/{goal.target}</span>
               </div>
-              <p className="text-sm text-gray-600 mb-3">{company.focus}</p>
-              <div className="flex items-center justify-between">
-                <span className="text-sm">Problems Practiced:</span>
-                <input
-                  type="number"
-                  min="0"
-                  value={companyProgress[company.name] || 0}
-                  onChange={(e) => setCompanyProgress(prev => ({
-                    ...prev,
-                    [company.name]: parseInt(e.target.value) || 0
-                  }))}
-                  className="w-16 px-2 py-1 text-sm border rounded"
-                />
+              <ProgressBar completed={goal.current} total={goal.target} />
+            </div>
+          ))}
+        </div>
+      </div>
+
+      {/* Calendar View */}
+      <div className={`p-6 rounded-xl ${darkMode ? 'bg-gray-800' : 'bg-white'} shadow-lg`}>
+        <h3 className="text-xl font-bold mb-4">This Week's Schedule</h3>
+        <div className="grid grid-cols-7 gap-2 text-center">
+          {['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'].map((day, index) => (
+            <div key={day} className="space-y-2">
+              <div className="font-medium text-sm">{day}</div>
+              <div className={`p-2 rounded ${index < 5 ? 'bg-green-100 text-green-800' : darkMode ? 'bg-gray-700' : 'bg-gray-100'}`}>
+                {index < 5 ? '✓' : '—'}
+              </div>
+              <div className="text-xs">
+                {index < 5 ? '3 problems' : 'Rest day'}
               </div>
             </div>
           ))}
@@ -456,81 +360,187 @@ export default function PlacementRoadmap() {
     </div>
   );
 
-  const renderSchedule = () => (
-    <div className="bg-white rounded-lg shadow-lg p-6">
-      <h2 className="text-2xl font-bold text-gray-800 mb-6 flex items-center">
-        <Calendar className="w-6 h-6 mr-2" />
-        Study Schedule
-      </h2>
-
-      <div className="grid grid-cols-1 md:grid-cols-7 gap-4">
-        {['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'].map((day, index) => (
-          <div key={day} className="border rounded-lg p-4">
-            <h3 className="font-semibold text-center mb-3">{day}</h3>
-            <div className="space-y-2 text-sm">
-              <div className="bg-blue-100 p-2 rounded">
-                <div className="font-medium">9:00-11:00 AM</div>
-                <div>DSA Practice</div>
+  const renderInterview = () => (
+    <div className="space-y-6">
+      {/* Mock Interviews */}
+      <div className={`p-6 rounded-xl ${darkMode ? 'bg-gray-800' : 'bg-white'} shadow-lg`}>
+        <h3 className="text-xl font-bold mb-4">Mock Interviews</h3>
+        <div className="space-y-4">
+          {mockInterviews.map((interview) => (
+            <div key={interview.id} className={`p-4 rounded-lg ${darkMode ? 'bg-gray-700' : 'bg-gray-50'} flex justify-between items-center`}>
+              <div>
+                <h4 className="font-medium">{interview.company} Interview</h4>
+                <p className={`text-sm ${darkMode ? 'text-gray-400' : 'text-gray-600'}`}>{interview.date}</p>
               </div>
-              <div className="bg-green-100 p-2 rounded">
-                <div className="font-medium">2:00-4:00 PM</div>
-                <div>Mock Interview</div>
-              </div>
-              <div className="bg-purple-100 p-2 rounded">
-                <div className="font-medium">7:00-8:00 PM</div>
-                <div>Review & Notes</div>
+              <div className="flex items-center gap-4">
+                {interview.completed ? (
+                  <div className="text-center">
+                    <div className="text-lg font-bold text-green-500">{interview.score}/10</div>
+                    <div className="text-xs">Score</div>
+                  </div>
+                ) : (
+                  <button className="bg-blue-500 text-white px-4 py-2 rounded-lg hover:bg-blue-600 transition-colors flex items-center gap-2">
+                    <Play size={16} />
+                    Start
+                  </button>
+                )}
               </div>
             </div>
+          ))}
+        </div>
+      </div>
+
+      {/* HR Questions */}
+      <div className={`p-6 rounded-xl ${darkMode ? 'bg-gray-800' : 'bg-white'} shadow-lg`}>
+        <h3 className="text-xl font-bold mb-4">HR Questions Practice</h3>
+        <div className="grid gap-3">
+          {hrQuestions.map((question, index) => (
+            <div key={index} className={`p-3 rounded-lg ${darkMode ? 'bg-gray-700' : 'bg-gray-50'} flex items-center justify-between group`}>
+              <span>{question}</span>
+              <button className="opacity-0 group-hover:opacity-100 bg-blue-500 text-white px-3 py-1 rounded text-sm hover:bg-blue-600 transition-all">
+                Practice
+              </button>
+            </div>
+          ))}
+        </div>
+      </div>
+    </div>
+  );
+
+  const renderResources = () => (
+    <div className="space-y-6">
+      {/* YouTube Channels */}
+      <div className={`p-6 rounded-xl ${darkMode ? 'bg-gray-800' : 'bg-white'} shadow-lg`}>
+        <h3 className="text-xl font-bold mb-4">📺 YouTube Channels</h3>
+        <div className="grid gap-4">
+          {resources.youtube.map((channel, index) => (
+            <div key={index} className={`p-4 rounded-lg ${darkMode ? 'bg-gray-700' : 'bg-gray-50'} flex justify-between items-center`}>
+              <div>
+                <h4 className="font-medium">{channel.name}</h4>
+                <div className="flex gap-2 mt-1">
+                  {channel.topics.map((topic) => (
+                    <span key={topic} className="bg-blue-500 text-white text-xs px-2 py-1 rounded">
+                      {topic}
+                    </span>
+                  ))}
+                </div>
+              </div>
+              <button className="bg-red-500 text-white px-4 py-2 rounded-lg hover:bg-red-600 transition-colors">
+                Visit
+              </button>
+            </div>
+          ))}
+        </div>
+      </div>
+
+      {/* Coding Sheets */}
+      <div className={`p-6 rounded-xl ${darkMode ? 'bg-gray-800' : 'bg-white'} shadow-lg`}>
+        <h3 className="text-xl font-bold mb-4">📋 Coding Sheets</h3>
+        <div className="grid gap-4">
+          {resources.sheets.map((sheet, index) => (
+            <div key={index} className={`p-4 rounded-lg ${darkMode ? 'bg-gray-700' : 'bg-gray-50'} flex justify-between items-center`}>
+              <div>
+                <h4 className="font-medium">{sheet.name}</h4>
+                <p className={`text-sm ${darkMode ? 'text-gray-400' : 'text-gray-600'}`}>
+                  {sheet.problems} problems • {sheet.difficulty}
+                </p>
+              </div>
+              <button className="bg-green-500 text-white px-4 py-2 rounded-lg hover:bg-green-600 transition-colors">
+                Start
+              </button>
+            </div>
+          ))}
+        </div>
+      </div>
+    </div>
+  );
+
+  const renderProfile = () => (
+    <div className="space-y-6">
+      {/* Badges */}
+      <div className={`p-6 rounded-xl ${darkMode ? 'bg-gray-800' : 'bg-white'} shadow-lg`}>
+        <h3 className="text-xl font-bold mb-4">🏆 Achievements</h3>
+        <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
+          {badges.map((badge, index) => (
+            <div key={index} className={`p-4 rounded-lg text-center ${badge.earned ? 'bg-yellow-100 text-yellow-800' : darkMode ? 'bg-gray-700 text-gray-400' : 'bg-gray-100 text-gray-600'}`}>
+              <div className="text-2xl mb-2">{badge.icon}</div>
+              <div className="font-medium text-sm">{badge.name}</div>
+              <div className="text-xs">+{badge.xp} XP</div>
+            </div>
+          ))}
+        </div>
+      </div>
+
+      {/* User Stats */}
+      <div className={`p-6 rounded-xl ${darkMode ? 'bg-gray-800' : 'bg-white'} shadow-lg`}>
+        <h3 className="text-xl font-bold mb-4">📊 Your Statistics</h3>
+        <div className="grid grid-cols-2 gap-6">
+          <div className="text-center">
+            <div className="text-3xl font-bold text-blue-500">{userData.totalProblems}</div>
+            <div className="text-sm">Problems Solved</div>
           </div>
-        ))}
+          <div className="text-center">
+            <div className="text-3xl font-bold text-green-500">{userData.streak}</div>
+            <div className="text-sm">Day Streak</div>
+          </div>
+          <div className="text-center">
+            <div className="text-3xl font-bold text-purple-500">{userData.xp}</div>
+            <div className="text-sm">Total XP</div>
+          </div>
+          <div className="text-center">
+            <div className="text-3xl font-bold text-yellow-500">{userData.level}</div>
+            <div className="text-sm">Current Level</div>
+          </div>
+        </div>
       </div>
     </div>
   );
 
   return (
-    <div className="max-w-7xl mx-auto p-6 bg-gray-50 min-h-screen">
-      <div className="bg-white rounded-lg shadow-lg p-6 mb-6">
-        <div className="text-center mb-6">
-          <h1 className="text-4xl font-bold text-gray-800 mb-2">Advanced Placement Prep Dashboard</h1>
-          <p className="text-lg text-gray-600">Complete tracking system for your campus placement journey</p>
+    <div className={`min-h-screen ${darkMode ? 'bg-gray-900 text-white' : 'bg-gray-50 text-gray-900'} transition-colors`}>
+      {/* Header */}
+      <div className={`${darkMode ? 'bg-gray-800' : 'bg-white'} shadow-sm border-b ${darkMode ? 'border-gray-700' : 'border-gray-200'}`}>
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="flex justify-between items-center py-4">
+            <div className="flex items-center gap-3">
+              <Trophy className="text-yellow-500" size={28} />
+              <h1 className="text-xl font-bold">PlacementPrep Pro</h1>
+            </div>
 
-          <div className="flex justify-center gap-4 mt-4">
-            <button
-              onClick={exportProgress}
-              className="flex items-center gap-2 px-4 py-2 bg-green-500 text-white rounded hover:bg-green-600"
-            >
-              <Download className="w-4 h-4" />
-              Export Progress
-            </button>
+            <div className="flex items-center gap-4">
+              <div className="hidden md:flex items-center gap-2 text-sm">
+                <span>🔥 {userData.streak} day streak</span>
+                <span>•</span>
+                <span>⭐ Level {userData.level}</span>
+              </div>
+
+              <button
+                onClick={() => setDarkMode(!darkMode)}
+                className={`p-2 rounded-lg ${darkMode ? 'bg-gray-700 text-yellow-400' : 'bg-gray-100 text-gray-600'}`}
+              >
+                {darkMode ? <Sun size={20} /> : <Moon size={20} />}
+              </button>
+            </div>
           </div>
         </div>
+      </div>
 
-        <div className="flex flex-wrap justify-center gap-2 mb-6">
-          {[
-            { id: 'roadmap', label: 'Roadmap', icon: Target },
-            { id: 'analytics', label: 'Analytics', icon: BarChart3 },
-            { id: 'companies', label: 'Companies', icon: Building2 },
-            { id: 'schedule', label: 'Schedule', icon: Calendar }
-          ].map(tab => (
-            <button
-              key={tab.id}
-              onClick={() => setActiveTab(tab.id)}
-              className={`flex items-center gap-2 px-4 py-2 rounded-lg transition-colors ${activeTab === tab.id
-                ? 'bg-blue-500 text-white'
-                : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
-                }`}
-            >
-              <tab.icon className="w-4 h-4" />
-              {tab.label}
-            </button>
-          ))}
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+        {/* Navigation */}
+        <div className={`mb-8 p-2 rounded-xl ${darkMode ? 'bg-gray-800' : 'bg-white'} shadow-lg`}>
+          <div className="flex flex-wrap gap-2">
+            <TabButton id="dashboard" icon={BarChart3} label="Dashboard" active={activeTab === 'dashboard'} onClick={setActiveTab} />
+            <TabButton id="topics" icon={CheckSquare} label="Topics" active={activeTab === 'topics'} onClick={setActiveTab} />
+            <TabButton id="companies" icon={Building} label="Companies" active={activeTab === 'companies'} onClick={setActiveTab} />
+            <TabButton id="schedule" icon={Calendar} label="Schedule" active={activeTab === 'schedule'} onClick={setActiveTab} />
+            <TabButton id="interview" icon={MessageSquare} label="Interview" active={activeTab === 'interview'} onClick={setActiveTab} />
+            <TabButton id="resources" icon={Book} label="Resources" active={activeTab === 'resources'} onClick={setActiveTab} />
+            <TabButton id="profile" icon={User} label="Profile" active={activeTab === 'profile'} onClick={setActiveTab} />
+          </div>
         </div>
-
-        {activeTab === 'roadmap' && renderRoadmap()}
-        {activeTab === 'analytics' && renderAnalytics()}
-        {activeTab === 'companies' && renderCompanies()}
-        {activeTab === 'schedule' && renderSchedule()}
       </div>
     </div>
   );
 }
+
+export default PlacementPrepApp;
